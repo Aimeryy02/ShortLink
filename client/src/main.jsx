@@ -31,6 +31,16 @@ function App() {
 
   useEffect(() => {
     loadLinks();
+
+    function refreshLinksOnFocus() {
+      loadLinks();
+    }
+
+    window.addEventListener('focus', refreshLinksOnFocus);
+
+    return () => {
+      window.removeEventListener('focus', refreshLinksOnFocus);
+    };
   }, []);
 
   useEffect(() => {
