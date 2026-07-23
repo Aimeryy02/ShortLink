@@ -21,6 +21,7 @@ async function getQRCode(req, res, next) {
     const qrTargetUrl = `${baseUrl}/${code}`;
     const qrCode = await generateQRCode(qrTargetUrl, size);
 
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
     res.type('image/png');
     res.send(qrCode);
   } catch (error) {

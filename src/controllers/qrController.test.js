@@ -14,11 +14,12 @@ describe('qrController.getQRCode', () => {
     qrService.generateQRCode.mockResolvedValue(Buffer.from([1, 2, 3]));
 
     const req = { params: { code: 'a1' }, protocol: 'https', get: () => 'host', query: {} };
-    const res = { type: jest.fn(), send: jest.fn() };
+    const res = { set: jest.fn(), type: jest.fn(), send: jest.fn() };
     const next = jest.fn();
 
     await getQRCode(req, res, next);
 
+    expect(res.set).toHaveBeenCalledWith('Cross-Origin-Resource-Policy', 'cross-origin');
     expect(res.type).toHaveBeenCalledWith('image/png');
     expect(res.send).toHaveBeenCalledWith(Buffer.from([1, 2, 3]));
     expect(next).not.toHaveBeenCalled();
