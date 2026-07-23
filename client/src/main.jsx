@@ -13,6 +13,7 @@ function App() {
   const [links, setLinks] = useState([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingLink, setEditingLink] = useState(null);
+  const [linkNotice, setLinkNotice] = useState(null);
   const [editForm, setEditForm] = useState({ title: '', originalUrl: '', tags: '', isActive: true, expiresAt: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +45,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const isModalOpen = isCreateOpen || Boolean(editingLink);
+    const isModalOpen = isCreateOpen || Boolean(editingLink) || Boolean(linkNotice);
 
     if (!isModalOpen) return undefined;
 
@@ -55,6 +56,7 @@ function App() {
       if (event.key !== 'Escape') return;
       setIsCreateOpen(false);
       setEditingLink(null);
+      setLinkNotice(null);
       setError('');
     }
 
@@ -64,7 +66,7 @@ function App() {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isCreateOpen, editingLink]);
+  }, [isCreateOpen, editingLink, linkNotice]);
 
   async function loadLinks() {
     try {
@@ -209,6 +211,26 @@ function App() {
     return API_BASE_URL || 'http://localhost:3000';
   }
 
+  function openLink(link) {
+    if (!link.isActive) {
+      setLinkNotice({
+        title: 'Lien désactivé',
+        message: 'Ce lien a été désactivé et ne peut pas être ouvert.',
+      });
+      return;
+    }
+
+    if (link.expiresAt && new Date(link.expiresAt).getTime() <= Date.now()) {
+      setLinkNotice({
+        title: 'Lien expiré',
+        message: `Ce lien a expiré le ${formatDisplayDate(link.expiresAt)}.`,
+      });
+      return;
+    }
+
+    window.open(buildShortUrl(link), '_blank', 'noopener,noreferrer');
+  }
+
   return (
     <main className="page-shell">
       <section className="panel links-panel">
@@ -254,7 +276,7 @@ function App() {
                 </div>
 
                 <div className="card-actions">
-                  <a className="secondary-link" href={shortUrl} target="_blank" rel="noreferrer">Ouvrir</a>
+                  <button type="button" className="secondary-link button-reset" onClick={() => openLink(link)}>Ouvrir</button>
                   <a className="secondary-link" href={`${shortUrl}+`} target="_blank" rel="noreferrer">Preview</a>
                   <a className="secondary-link" href={`${API_BASE_URL}/api/qr/${code}`} target="_blank" rel="noreferrer">QR</a>
                   <button type="button" className="secondary-button" onClick={() => startEdit(link)}>Modifier</button>
@@ -386,6 +408,24 @@ function App() {
           </form>
 
           {error && <p className="message error" role="alert">{error}</p>}
+        </Modal>
+      )}
+
+      {linkNotice && (
+        <Modal
+          title={linkNotice.title}
+          titleId="link-notice-modal-title"
+          onClose={() => setLinkNotice(null)}
+        >
+          <div className="link-notice" role="alert">
+            <span className="link-notice-icon" aria-hidden="true">!</span>
+            <p>{linkNotice.message}</p>
+          </div>
+          <div className="actions notice-actions">
+            <button type="button" className="secondary-button" onClick={() => setLinkNotice(null)}>
+              Fermer
+            </button>
+          </div>
         </Modal>
       )}
     </main>

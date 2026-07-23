@@ -365,6 +365,40 @@ h2 {
   background: #cbd5e1;
 }
 
+.link-notice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #7f1d1d;
+  background: #fef2f2;
+  font-weight: 700;
+}
+
+.link-notice p {
+  margin: 0;
+}
+
+.link-notice-icon {
+  display: grid;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #dc2626;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.notice-actions {
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
 @media (max-width: 820px) {
   .link-card {
     grid-template-columns: 1fr;
