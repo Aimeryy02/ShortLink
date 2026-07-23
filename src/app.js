@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 
+const { createCorsOptions } = require('./config/cors');
 const rateLimiter = require('./config/rateLimit');
 const routes = require('./routes');
 const redirectRoutes = require('./routes/redirectRoutes');
@@ -15,7 +16,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use(helmet());
-app.use(cors());
+app.use(cors(createCorsOptions()));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
