@@ -11,6 +11,7 @@ function App() {
   const [expiresAt, setExpiresAt] = useState('');
   const [result, setResult] = useState(null);
   const [links, setLinks] = useState([]);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingLink, setEditingLink] = useState(null);
   const [editForm, setEditForm] = useState({ title: '', originalUrl: '', tags: '', isActive: true, expiresAt: '' });
   const [error, setError] = useState('');
@@ -31,6 +32,29 @@ function App() {
   useEffect(() => {
     loadLinks();
   }, []);
+
+  useEffect(() => {
+    const isModalOpen = isCreateOpen || Boolean(editingLink);
+
+    if (!isModalOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    function handleKeyDown(event) {
+      if (event.key !== 'Escape') return;
+      setIsCreateOpen(false);
+      setEditingLink(null);
+      setError('');
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isCreateOpen, editingLink]);
 
   async function loadLinks() {
     try {
@@ -86,7 +110,20 @@ function App() {
     setCopyLabel('Copié');
   }
 
+  function openCreateModal() {
+    setResult(null);
+    setError('');
+    setCopyLabel('Copier');
+    setIsCreateOpen(true);
+  }
+
+  function closeCreateModal() {
+    setIsCreateOpen(false);
+    setError('');
+  }
+
   function startEdit(link) {
+    setError('');
     setEditingLink(link);
     setEditForm({
       title: link.title || '',
@@ -95,6 +132,11 @@ function App() {
       isActive: Boolean(link.isActive),
       expiresAt: formatDateTimeLocal(link.expiresAt),
     });
+  }
+
+  function closeEditModal() {
+    setEditingLink(null);
+    setError('');
   }
 
   async function submitEdit(event) {
@@ -159,62 +201,27 @@ function App() {
 
   return (
     <main className="page-shell">
-      <section className="panel">
-        <div className="heading">
-          <p className="eyebrow">ShortLink</p>
-          <h1>Créer un lien court</h1>
-        </div>
-
-        <form className="shorten-form" onSubmit={handleSubmit}>
-          <label htmlFor="originalUrl">URL longue</label>
-          <input id="originalUrl" type="url" placeholder="https://example.com/article/tres-long" value={originalUrl} onChange={(e) => setOriginalUrl(e.target.value)} required />
-
-          <label htmlFor="title">Titre</label>
-          <input id="title" type="text" placeholder="Campagne Google" value={title} onChange={(e) => setTitle(e.target.value)} />
-
-          <label htmlFor="customAlias">Alias personnalisé</label>
-          <input id="customAlias" type="text" placeholder="mon-lien" value={customAlias} onChange={(e) => setCustomAlias(e.target.value)} />
-
-          <label htmlFor="expiresAt">Date d'expiration</label>
-          <input
-            id="expiresAt"
-            type="datetime-local"
-            value={expiresAt}
-            onChange={(e) => setExpiresAt(e.target.value)}
-          />
-
-          <button type="submit" disabled={isLoading}>{isLoading ? 'Création...' : 'Créer le lien'}</button>
-        </form>
-
-        {error && <p className="message error">{error}</p>}
-
-        {result && resultLinks && (
-          <section className="result" aria-live="polite">
-            <p className="result-label">Lien court</p>
-            <a className="short-url" href={result.shortUrl} target="_blank" rel="noreferrer">{result.shortUrl}</a>
-
-            <div className="actions">
-              <button type="button" className="secondary-button" onClick={copyShortUrl}>{copyLabel}</button>
-              <a className="secondary-link" href={resultLinks.previewUrl} target="_blank" rel="noreferrer">Prévisualiser {resultLinks.previewPath}</a>
-            </div>
-
-            <div className="qr-wrap">
-              <img src={resultLinks.qrUrl} alt={`QR Code pour ${resultLinks.code}`} />
-            </div>
-          </section>
-        )}
-      </section>
-
       <section className="panel links-panel">
         <div className="heading row-heading">
           <div>
             <p className="eyebrow">Gestion</p>
-            <h2>Liens créés</h2>
+            <h1>Liens créés</h1>
           </div>
-          <button type="button" className="secondary-button" onClick={loadLinks}>Rafraîchir</button>
+          <div className="header-actions">
+            <button type="button" className="secondary-button" onClick={loadLinks}>Rafraîchir</button>
+            <button type="button" className="primary-button" onClick={openCreateModal}>Créer un lien</button>
+          </div>
         </div>
 
+        {error && !isCreateOpen && !editingLink && (
+          <p className="message error" role="alert">{error}</p>
+        )}
+
         <div className="links-list">
+          {links.length === 0 && (
+            <p className="empty-state">Aucun lien créé pour le moment.</p>
+          )}
+
           {links.map((link) => {
             const shortUrl = buildShortUrl(link);
             const code = link.customAlias || link.shortCode;
@@ -233,7 +240,8 @@ function App() {
                     Expiration : {formatDisplayDate(link.expiresAt)}
                     {' · '}
                     {(link.tags || []).join(', ') || 'Aucun tag'}
-                  </p>                </div>
+                  </p>
+                </div>
 
                 <div className="card-actions">
                   <a className="secondary-link" href={shortUrl} target="_blank" rel="noreferrer">Ouvrir</a>
@@ -248,45 +256,159 @@ function App() {
             );
           })}
         </div>
+      </section>
 
-        {editingLink && (
-          <form className="edit-form" onSubmit={submitEdit}>
-            <h3>Modifier le lien</h3>
-
-            <label>Titre</label>
-            <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
-
-            <label>URL de destination</label>
-            <input type="url" value={editForm.originalUrl} onChange={(e) => setEditForm({ ...editForm, originalUrl: e.target.value })} />
-
-            <label>Tags séparés par des virgules</label>
-            <input value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} />
-
-            <label>Date d'expiration</label>
+      {isCreateOpen && (
+        <Modal title="Créer un lien court" titleId="create-modal-title" onClose={closeCreateModal}>
+          <form className="shorten-form" onSubmit={handleSubmit}>
+            <label htmlFor="originalUrl">URL longue</label>
             <input
+              id="originalUrl"
+              type="url"
+              placeholder="https://example.com/article/tres-long"
+              value={originalUrl}
+              onChange={(event) => setOriginalUrl(event.target.value)}
+              autoFocus
+              required
+            />
+
+            <label htmlFor="title">Titre</label>
+            <input
+              id="title"
+              type="text"
+              placeholder="Campagne Google"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+
+            <label htmlFor="customAlias">Alias personnalisé</label>
+            <input
+              id="customAlias"
+              type="text"
+              placeholder="mon-lien"
+              value={customAlias}
+              onChange={(event) => setCustomAlias(event.target.value)}
+            />
+
+            <label htmlFor="expiresAt">Date d'expiration</label>
+            <input
+              id="expiresAt"
+              type="datetime-local"
+              value={expiresAt}
+              onChange={(event) => setExpiresAt(event.target.value)}
+            />
+
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? 'Création...' : 'Créer le lien'}
+            </button>
+          </form>
+
+          {error && <p className="message error" role="alert">{error}</p>}
+
+          {result && resultLinks && (
+            <section className="result" aria-live="polite">
+              <p className="result-label">Lien court</p>
+              <a className="short-url" href={result.shortUrl} target="_blank" rel="noreferrer">{result.shortUrl}</a>
+
+              <div className="actions">
+                <button type="button" className="secondary-button" onClick={copyShortUrl}>{copyLabel}</button>
+                <a className="secondary-link" href={resultLinks.previewUrl} target="_blank" rel="noreferrer">
+                  Prévisualiser {resultLinks.previewPath}
+                </a>
+              </div>
+
+              <div className="qr-wrap">
+                <img src={resultLinks.qrUrl} alt={`QR Code pour ${resultLinks.code}`} />
+              </div>
+            </section>
+          )}
+        </Modal>
+      )}
+
+      {editingLink && (
+        <Modal title="Modifier le lien" titleId="edit-modal-title" onClose={closeEditModal}>
+          <form className="edit-form" onSubmit={submitEdit}>
+            <label htmlFor="edit-title">Titre</label>
+            <input
+              id="edit-title"
+              value={editForm.title}
+              onChange={(event) => setEditForm({ ...editForm, title: event.target.value })}
+              autoFocus
+            />
+
+            <label htmlFor="edit-original-url">URL de destination</label>
+            <input
+              id="edit-original-url"
+              type="url"
+              value={editForm.originalUrl}
+              onChange={(event) => setEditForm({ ...editForm, originalUrl: event.target.value })}
+              required
+            />
+
+            <label htmlFor="edit-tags">Tags séparés par des virgules</label>
+            <input
+              id="edit-tags"
+              value={editForm.tags}
+              onChange={(event) => setEditForm({ ...editForm, tags: event.target.value })}
+            />
+
+            <label htmlFor="edit-expires-at">Date d'expiration</label>
+            <input
+              id="edit-expires-at"
               type="datetime-local"
               value={editForm.expiresAt}
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  expiresAt: e.target.value,
-                })
-              }
+              onChange={(event) => setEditForm({ ...editForm, expiresAt: event.target.value })}
             />
 
             <label className="checkbox-line">
-              <input type="checkbox" checked={editForm.isActive} onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={editForm.isActive}
+                onChange={(event) => setEditForm({ ...editForm, isActive: event.target.checked })}
+              />
               Lien actif
             </label>
 
             <div className="actions">
               <button type="submit" className="secondary-button">Enregistrer</button>
-              <button type="button" className="secondary-link button-reset" onClick={() => setEditingLink(null)}>Annuler</button>
+              <button type="button" className="secondary-link button-reset" onClick={closeEditModal}>Annuler</button>
             </div>
           </form>
-        )}
-      </section>
+
+          {error && <p className="message error" role="alert">{error}</p>}
+        </Modal>
+      )}
     </main>
+  );
+}
+
+function Modal({ title, titleId, onClose, children }) {
+  function handleBackdropClick(event) {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onMouseDown={handleBackdropClick}>
+      <section
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+      >
+        <div className="modal-header">
+          <div>
+            <p className="eyebrow">ShortLink</p>
+            <h2 id={titleId}>{title}</h2>
+          </div>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Fermer la fenêtre">
+            ×
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
   );
 }
 
