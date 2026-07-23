@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch --watch-path=./src --watch-path=./server.js server.js",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
+    "dev:frontend": "vite --host 127.0.0.1",
+    "build:frontend": "vite build"
   },
   "keywords": [
     "shortlink",
@@ -26,7 +30,14 @@
     "mongoose": "^8.9.5",
     "pino": "^9.6.0",
     "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "useragent": "^2.3.0",
+    "vite": "^5.4.11",
     "zod": "^3.24.1"
+  }
+  ,
+  "devDependencies": {
+    "jest": "^29.6.1"
   }
 }

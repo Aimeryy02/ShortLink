@@ -21,6 +21,7 @@ const tagsSchema = z.array(z.string().trim().min(1)).optional();
 
 const shortenLinkSchema = z.object({
   originalUrl: urlSchema,
+  title: z.string().trim().max(120).optional(),
   customAlias: z.preprocess(
     (value) => (value === '' || value === null ? undefined : value),
     aliasSchema.optional(),

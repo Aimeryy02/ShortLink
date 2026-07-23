@@ -6,7 +6,7 @@ const { checkURLSafety } = require('./validationService');
 
 const MAX_SHORT_CODE_ATTEMPTS = 10;
 
-async function createShortLink({ originalUrl, customAlias, expiresAt }) {
+async function createShortLink({ originalUrl, customAlias, expiresAt, title }) {
   const safety = checkURLSafety(originalUrl);
 
   if (!safety.isSafe) {
@@ -34,6 +34,7 @@ async function createShortLink({ originalUrl, customAlias, expiresAt }) {
     originalUrl,
     shortCode,
     customAlias,
+    title,
     expiresAt,
   });
 

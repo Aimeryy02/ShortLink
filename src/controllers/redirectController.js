@@ -44,6 +44,14 @@ async function redirectToOriginalUrl(req, res, next) {
       throw new AppError('Link not found', 404);
     }
 
+    if (!link.isActive) {
+      throw new AppError('Link is disabled', 403);
+    }
+
+    if (link.expiresAt && link.expiresAt <= new Date()) {
+      throw new AppError('Link expired', 410);
+    }
+
     await trackClick(link, req);
     logger.info({ linkId: link._id }, 'Tracking finished');
 

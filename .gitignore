@@ -4,4 +4,8 @@ node_modules/
 npm-debug.log*
 coverage/
 dist/
+vite.out.log
+vite.err.log
 .DS_Store
+perso/
+agents/
