@@ -127,7 +127,7 @@ git push
 3. Connecter GitHub
 4. Sélectionner le dépôt `ShortLink`
 5. Configuration:
-   - **Name**: `shortlink-api`
+   - **Name**: `ShortLink`
    - **Environment**: `Node`
    - **Build Command**: `npm install`
    - **Start Command**: `npm start`
@@ -140,7 +140,7 @@ Dans Render → Settings → Environment:
 ```
 MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/shortlink
 NODE_ENV=production
-BASE_URL=https://shortlink-api.render.com
+BASE_URL=https://shortlink-whkw.onrender.com
 LOG_LEVEL=warn
 ```
 
@@ -166,6 +166,8 @@ git push
 3. Importer GitHub → Sélectionner `ShortLink`
 4. Configuration:
    - **Framework Preset**: Vite
+   - **Root Directory**: `./`
+   - **Install Command**: `npm install`
    - **Build Command**: `npm run build:frontend`
    - **Output Directory**: `dist`
 
@@ -174,7 +176,7 @@ git push
 Dans Vercel → Settings → Environment Variables:
 
 ```
-VITE_API_URL=https://shortlink-api.render.com
+VITE_API_BASE_URL=https://shortlink-whkw.onrender.com
 ```
 
 #### 4. Deploy
@@ -217,12 +219,15 @@ mongodb+srv://shortlink:PASSWORD@cluster.mongodb.net/shortlink
 
 ### GitHub Actions
 
-Le pipeline s'exécute automatiquement à chaque push:
+Le pipeline d'intégration continue s'exécute automatiquement à chaque push.
+Render et Vercel sont connectés directement au dépôt GitHub et déclenchent
+leurs propres déploiements après un push sur `main` ; ce déploiement n'est pas
+réalisé par le workflow GitHub Actions.
 
 #### Étapes
 
 1. **Checkout** - Cloner le code
-2. **Setup Node.js** - Configurer Node 18 et 20
+2. **Setup Node.js** - Configurer Node 22 et 24
 3. **Install** - `npm ci`
 4. **Tests** - `npm test` (doit passer)
 5. **Coverage** - Mesurer 92%+
@@ -267,7 +272,7 @@ Vercel Dashboard → Deployments → Function Logs
 
 ```bash
 # Render API
-curl https://shortlink-api.render.com/health
+curl https://shortlink-whkw.onrender.com/health
 
 # MongoDB Stats
 Dans Atlas Dashboard → Metrics
@@ -310,7 +315,7 @@ git log --oneline
 git revert <commit-sha>
 git push
 
-# Attendre le redéploiement automatique (GitHub Actions)
+# Attendre les redéploiements automatiques Render et Vercel
 ```
 
 ---
@@ -319,12 +324,12 @@ git push
 
 ### Checklist
 
-- [ ] API répond à `GET /api/links`
-- [ ] Frontend charge à `https://shortlink.vercel.app`
-- [ ] Créer un lien test
-- [ ] Vérifier redirection
+- [x] API répond à `GET /api/links`
+- [x] Frontend charge à `https://short-link-omega.vercel.app`
+- [x] Créer un lien test
+- [x] Vérifier redirection
 - [ ] Consulter stats
-- [ ] Vérifier QR code
+- [x] Vérifier QR code
 - [ ] Tests d'accessibilité Lighthouse
 - [ ] Audit de sécurité
 
@@ -332,7 +337,7 @@ git push
 
 ```bash
 # De la console Vercel
-const res = await fetch('https://shortlink-api.render.com/api/links', {
+const res = await fetch('https://shortlink-whkw.onrender.com/api/links', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ originalUrl: 'https://example.com' })
