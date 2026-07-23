@@ -5,6 +5,7 @@ const { trackClick } = require('../services/analyticsService');
 
 async function previewLink(req, res, next) {
   try {
+    res.set('Cache-Control', 'no-store');
     const code = req.params.code || req.params[0];
 
     const link = await Link.findOne({
@@ -32,6 +33,7 @@ async function previewLink(req, res, next) {
 
 async function redirectToOriginalUrl(req, res, next) {
   try {
+    res.set('Cache-Control', 'no-store');
     logger.info({ code: req.params.code }, 'Redirect route hit');
 
     const { code } = req.params;

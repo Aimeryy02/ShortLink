@@ -269,6 +269,19 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.inline-link-button {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  color: #0000ee;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
 .meta {
   margin: 10px 0 0;
   color: #475569;

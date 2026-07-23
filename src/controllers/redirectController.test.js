@@ -20,11 +20,12 @@ describe('redirectController.previewLink', () => {
     });
 
     const req = { params: { code: 'abc' } };
-    const res = { type: jest.fn(), send: jest.fn() };
+    const res = { set: jest.fn(), type: jest.fn(), send: jest.fn() };
     const next = jest.fn();
 
     await previewLink(req, res, next);
 
+    expect(res.set).toHaveBeenCalledWith('Cache-Control', 'no-store');
     expect(res.type).toHaveBeenCalledWith('html');
     expect(res.send).toHaveBeenCalled();
     const html = res.send.mock.calls[0][0];
@@ -37,7 +38,7 @@ describe('redirectController.previewLink', () => {
     Link.findOne.mockResolvedValue(null);
 
     const req = { params: { code: 'nope' } };
-    const res = { type: jest.fn(), send: jest.fn() };
+    const res = { set: jest.fn(), type: jest.fn(), send: jest.fn() };
     const next = jest.fn();
 
     await previewLink(req, res, next);
@@ -61,11 +62,12 @@ describe('redirectController.redirectToOriginalUrl', () => {
     analytics.trackClick.mockResolvedValue();
 
     const req = { params: { code: 'xyz' } };
-    const res = { redirect: jest.fn() };
+    const res = { set: jest.fn(), redirect: jest.fn() };
     const next = jest.fn();
 
     await redirectToOriginalUrl(req, res, next);
 
+    expect(res.set).toHaveBeenCalledWith('Cache-Control', 'no-store');
     expect(analytics.trackClick).toHaveBeenCalledWith(link, req);
     expect(res.redirect).toHaveBeenCalledWith(302, 'https://site.example/page');
     expect(next).not.toHaveBeenCalled();
@@ -75,7 +77,7 @@ describe('redirectController.redirectToOriginalUrl', () => {
     Link.findOne.mockResolvedValue({ isActive: false });
 
     const req = { params: { code: 'off' } };
-    const res = { redirect: jest.fn() };
+    const res = { set: jest.fn(), redirect: jest.fn() };
     const next = jest.fn();
 
     await redirectToOriginalUrl(req, res, next);

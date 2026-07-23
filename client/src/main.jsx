@@ -263,7 +263,9 @@ function App() {
                 <div>
                   <h3>{link.title || 'Sans titre'}</h3>
                   <p className="muted">{link.originalUrl}</p>
-                  <a href={shortUrl} target="_blank" rel="noreferrer">{shortUrl}</a>
+                  <button type="button" className="inline-link-button" onClick={() => openLink(link)}>
+                    {shortUrl}
+                  </button>
                   <p className="meta">
                     {link.clicks} clic(s)
                     {' · '}
