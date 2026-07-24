@@ -178,11 +178,12 @@ npm start              # Démarrer le serveur
 ### Résultat des Tests
 
 ```
-✅ 10 test suites passed
-✅ 56 tests passed
-✅ 92.83% statement coverage
-✅ 79.5% branch coverage
+✅ 11 test suites passed
+✅ 62 tests passed
+✅ 92.91% statement coverage
+✅ 79.50% branch coverage
 ✅ 97.91% function coverage
+✅ 92.77% line coverage
 ```
 
 Exécuter les tests:
@@ -236,7 +237,7 @@ npm run test:coverage    # Avec rapport de couverture
 | **C2.1.1** | Infrastructure multi-env | [01-Manuel-deploiement.md](docs/01-Manuel-deploiement.md) | ✅ |
 | **C2.1.2** | Intégration Continue (CI/CD) | [.github/workflows/ci.yml](.github/workflows/ci.yml) | ✅ |
 | **C2.2.1** | Architecture logicielle en couches | [Architecture ci-dessus](#-architecture) | ✅ |
-| **C2.2.2** | Tests unitaires 70%+ | [npm run test:coverage](#-tests--couverture) - **92.83%** | ✅ |
+| **C2.2.2** | Tests unitaires 70%+ | [npm run test:coverage](#-tests--couverture) - **92.91%** | ✅ |
 | **C2.2.3** | Sécurité OWASP 10/10 | [06-Securite-Accessibilite.md](docs/06-Securite-Accessibilite.md) | ✅ |
 | **C2.2.3** | Accessibilité WCAG AA | [06-Securite-Accessibilite.md](docs/06-Securite-Accessibilite.md) - **Lighthouse 92** | ✅ |
 | **C2.2.4** | Versioning CHANGELOG + tags | [CHANGELOG.md](CHANGELOG.md) - v1.0.0 | ✅ |
@@ -251,7 +252,7 @@ Pour une validation **point par point détaillée** avec justifications, voir: *
 ### Résumé des Livrables
 
 ```
-✅ Tests: 56 tests, 92.83% couverture (seuil min 70%)
+✅ Tests: 62 tests, 92.91% couverture des instructions
 ✅ Sécurité: 10/10 catégories OWASP 2021 traitées
 ✅ Accessibilité: WCAG 2.1 Level AA conforme
 ✅ Documentation: 2500+ lignes (6 documents)
