@@ -272,18 +272,24 @@ git push origin main
 2. Cliquer le déploiement précédent fonctionnel
 3. Cliquer "Redeploy"
 
-#### Option 3: Revenir à un tag
+#### Option 3: Revenir à l'état d'un tag (sans réécrire l'historique)
 
 ```bash
 # Lister les tags
 git tag
 
-# Revenir à v1.0.0
-git checkout v1.0.0
-git push origin HEAD:main --force
+# Restaurer l'arborescence de la version v1.0.0 via des commits de revert
+git revert --no-commit v1.0.0..HEAD
+git commit -m "revert: revenir à l'état de v1.0.0"
+git push origin main
 
-# ⚠️ Force push - uniquement en cas d'urgence!
+# Render et Vercel redéploient automatiquement
 ```
+
+> ⚠️ Ne jamais forcer le push sur `main` (`git push --force`) : cela réécrit
+> l'historique partagé et casse les copies des autres. Préférer un `git revert`
+> (ci-dessus) ou le redéploiement de la version précédente via Render/Vercel
+> (Option 2).
 
 ---
 

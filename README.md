@@ -90,7 +90,7 @@ Réalisé dans le cadre du **Bloc 2 RNCP : Concevoir et développer des applicat
 
 ## 📦 Prérequis
 
-- **Node.js** 18+ 
+- **Node.js** 22+ (CI testée sous Node 22 et 24)
 - **npm** 9+
 - **MongoDB 5.0+** (local ou MongoDB Atlas)
 - **Git**
@@ -127,12 +127,21 @@ NODE_ENV=development
 # Base URL pour les liens courts
 BASE_URL=http://localhost:3000
 
+# Frontend autorisé (CORS)
+CLIENT_URL=http://127.0.0.1:5173
+
+# Sécurité — clé d'administration (min. 32 caractères, OBLIGATOIRE)
+# Sans elle (ou si < 32 car.), l'administration renvoie 503.
+ADMIN_API_KEY=une-cle-aleatoire-de-32-caracteres-minimum
+
 # QR Code
 QR_DEFAULT_SIZE=400
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
+REDIRECT_RATE_LIMIT_WINDOW_MS=60000
+REDIRECT_RATE_LIMIT_MAX_REQUESTS=120
 
 # Logging
 LOG_LEVEL=info
@@ -236,16 +245,15 @@ reproductibles.**
 
 | Critère | Intitulé | Preuve | Statut |
 |---------|----------|--------|--------|
-| **C2.1.1** | Infrastructure multi-env | [01-Manuel-deploiement.md](docs/01-Manuel-deploiement.md) | ✅ |
-| **C2.1.2** | Intégration Continue (CI/CD) | [.github/workflows/ci.yml](.github/workflows/ci.yml) | ✅ |
-| **C2.2.1** | Architecture logicielle en couches | [Architecture ci-dessus](#-architecture) | ✅ |
-| **C2.2.2** | Tests unitaires 70%+ | [npm run test:coverage](#-tests--couverture) - **91.98%** | ✅ |
-| **C2.2.3** | Sécurité OWASP | Mesures OWASP 2025, clé administrateur, audit npm à 0 | ⏳ preuve production |
-| **C2.2.3** | Accessibilité RGAA 4.1.2 | Correctifs intégrés, audit manuel/Lighthouse à exécuter | ⏳ |
-| **C2.2.4** | Versioning CHANGELOG + tags | [CHANGELOG.md](CHANGELOG.md) - v1.0.0 | ✅ |
-| **C2.3.1** | Cahier de recettes fonctionnelles | [04-Cahier-recettes.md](docs/04-Cahier-recettes.md) - **20 validées** | ✅ |
-| **C2.3.2** | Plan correction bugs | [05-Plan-correction-bugs.md](docs/05-Plan-correction-bugs.md) - **6 corrigés** | ✅ |
-| **C2.3.3** | 3 Manuels (deploy/usage/update) | [01](docs/01-Manuel-deploiement.md) [02](docs/02-Manuel-utilisation.md) [03](docs/03-Manuel-mise-a-jour.md) | ✅ |
+| **C2.1.1** | Environnements de déploiement et de test | [01-Manuel-deploiement.md](docs/01-Manuel-deploiement.md) | ✅ |
+| **C2.1.2** | Intégration continue (CI/CD) | [.github/workflows/ci.yml](.github/workflows/ci.yml) | ✅ |
+| **C2.2.1** | Prototype fonctionnel, ergonomique et sécurisé | [Architecture](#-architecture), clé d'administration | ✅ |
+| **C2.2.2** | Tests unitaires (seuil 70 %) | [test:coverage](#-tests--couverture) - **91.98%** | ✅ |
+| **C2.2.3** | Sécurité OWASP + accessibilité RGAA | Auth prod vérifiée (401/200), npm audit 0, Lighthouse 100 après correction | ⏳ redéploiement |
+| **C2.2.4** | Versions, déploiement progressif | [CHANGELOG.md](CHANGELOG.md) - tags **v1.0.0 / v1.0.1** | ✅ |
+| **C2.3.1** | Cahier de recettes | [04-Cahier-recettes.md](docs/04-Cahier-recettes.md) - **24 recettes exécutées** | ⏳ redéploiement |
+| **C2.3.2** | Plan de correction des bogues | [05-Plan-correction-bugs.md](docs/05-Plan-correction-bugs.md) - **7 corrigés, tracés** | ✅ |
+| **C2.4.1** | Documentation d'exploitation (3 manuels) | [01](docs/01-Manuel-deploiement.md) · [02](docs/02-Manuel-utilisation.md) · [03](docs/03-Manuel-mise-a-jour.md) | ✅ |
 
 ### Audit Complet
 
@@ -255,11 +263,11 @@ Pour une validation **point par point détaillée** avec justifications, voir: *
 
 ```
 ✅ Tests: 70 tests, 91.98% couverture des instructions
-⏳ Sécurité: mesures documentées pour les 10 catégories OWASP 2025, preuve production en cours
-⏳ Accessibilité: RGAA 4.1.2 choisi, contrôles manuels et Lighthouse à conserver
-✅ Documentation: livrée séparément sous forme de PDF
+✅ Sécurité: 10 catégories OWASP 2025 couvertes, npm audit 0, auth admin vérifiée en production (401/200)
+⏳ Accessibilité: RGAA 4.1.2, Lighthouse 94 → 100 après correction du contraste, redéploiement pour la prod
+✅ Documentation: 3 manuels (docs/) + README, choix technologiques décrits
 ✅ CI/CD: GitHub Actions automatisé
-✅ Versioning: CHANGELOG v1.0.0 + tags Git
+✅ Versioning: CHANGELOG + tags v1.0.0 / v1.0.1
 ```
 
 ---

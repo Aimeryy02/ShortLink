@@ -189,6 +189,31 @@
 
 ---
 
+## Traçabilité des corrections
+
+Chaque bogue est relié à la correction dans le code, au commit identifiable et à
+la preuve qui le garde contre les régressions (test unitaire et/ou recette du
+cahier `04-Cahier-recettes.md`). Note honnête : certaines corrections
+correspondent à un commit dédié ; d'autres étaient gérées dès l'implémentation
+initiale (`ab7a02b`) et sont garanties par les tests et recettes.
+
+| Bogue | Correction (fichier) | Commit(s) | Test unitaire | Recette |
+|---|---|---|---|---|
+| BUG-001 Expiration | `redirectController.js` (contrôle `expiresAt` + `Cache-Control: no-store`) | `60bb67e`, `347a115` | `redirectController.test.js` | REC-007 (410) |
+| BUG-002 Format de date (frontend) | `client/src/main.jsx` | `941429f`/`f0d7561` | — (hors périmètre Jest) | vérification visuelle |
+| BUG-003 Titre non sauvegardé | `linkService.js` (`createShortLink`) | `60bb67e` | `linkService.test.js` | REC-015 |
+| BUG-004 Rate limiting | `rateLimit.js` (limite configurable par env) | `ab7a02b` (présent dès l'initial) | — (intégration) | REC-017 (429) |
+| BUG-005 Taille QR invalide | `qrController.js` (`parseSize` → 400) | `ab7a02b`, `9fd678e` | `qrController.test.js` | REC-010b (400) |
+| BUG-006 Collision de `shortCode` | `Link.js` (index `unique`) + `linkService.js` (relance, `MAX_SHORT_CODE_ATTEMPTS = 10`) | `ab7a02b` (présent dès l'initial) | `shortCodeService.test.js` | REC-001 |
+| BUG-007 Focus non restauré | `client/src/main.jsx` (composant `Modal`) | `d1efaee` (tag `v1.0.1`) | — | REC-019 (E2E clavier) |
+
+Les corrections d'expiration (BUG-001), de titre (BUG-003), de taille de QR
+(BUG-005), de désactivation et de focus (BUG-007) ont été **re-vérifiées le
+24 juillet 2026** par l'exécution du cahier de recettes sur base réelle et par le
+parcours E2E navigateur.
+
+---
+
 ## Processus de Correction
 
 ### 1. Identification
