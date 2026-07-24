@@ -79,6 +79,23 @@ input:focus {
   border-color: #16a34a;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 3px;
+}
+
+.auth-panel {
+  width: min(100%, 560px);
+}
+
+.auth-help {
+  margin: 18px 0 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
 .shorten-form button {
   min-height: 48px;
   margin-top: 8px;
@@ -308,6 +325,17 @@ h2 {
   cursor: pointer;
 }
 
+.logout-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  color: #334155;
+  background: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .edit-form {
   display: grid;
   gap: 12px;
@@ -454,5 +482,16 @@ h2 {
     width: 100%;
     max-height: 94vh;
     border-radius: 16px 16px 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

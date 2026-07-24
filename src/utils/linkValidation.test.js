@@ -71,6 +71,10 @@ describe('linkValidation', () => {
       const result = listLinksQuerySchema.parse({ tags: 'tag1,tag2' });
       expect(result.tags).toEqual(['tag1', 'tag2']);
     });
+
+    test('rejette une recherche dépassant 100 caractères', () => {
+      expect(() => listLinksQuerySchema.parse({ search: 'a'.repeat(101) })).toThrow();
+    });
   });
 
   describe('updateLinkSchema', () => {

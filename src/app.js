@@ -4,6 +4,7 @@ const helmet = require('helmet');
 
 const { createCorsOptions } = require('./config/cors');
 const rateLimiter = require('./config/rateLimit');
+const redirectRateLimiter = require('./config/redirectRateLimit');
 const routes = require('./routes');
 const redirectRoutes = require('./routes/redirectRoutes');
 const notFoundMiddleware = require('./middlewares/notFoundMiddleware');
@@ -17,8 +18,8 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(helmet());
 app.use(cors(createCorsOptions()));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '20kb' }));
+app.use(express.urlencoded({ extended: true, limit: '20kb' }));
 
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
@@ -44,7 +45,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api', rateLimiter);
 app.use(routes);
-app.use('/', redirectRoutes);
+app.use('/', redirectRateLimiter, redirectRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

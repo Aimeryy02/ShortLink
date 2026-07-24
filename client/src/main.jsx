@@ -1,10 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 function App() {
+  const [adminKey, setAdminKey] = useState(() => sessionStorage.getItem('shortlink-admin-key') || '');
+  const [adminKeyInput, setAdminKeyInput] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [originalUrl, setOriginalUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [title, setTitle] = useState('');
@@ -31,10 +35,17 @@ function App() {
   }, [result]);
 
   useEffect(() => {
-    loadLinks();
+    if (adminKey) {
+      loadLinks(adminKey);
+    } else {
+      setLinks([]);
+      setIsAuthenticated(false);
+    }
 
     function refreshLinksOnFocus() {
-      loadLinks();
+      if (adminKey) {
+        loadLinks(adminKey);
+      }
     }
 
     window.addEventListener('focus', refreshLinksOnFocus);
@@ -42,7 +53,7 @@ function App() {
     return () => {
       window.removeEventListener('focus', refreshLinksOnFocus);
     };
-  }, []);
+  }, [adminKey]);
 
   useEffect(() => {
     const isModalOpen = isCreateOpen || Boolean(editingLink) || Boolean(linkNotice);
@@ -68,15 +79,71 @@ function App() {
     };
   }, [isCreateOpen, editingLink, linkNotice]);
 
-  async function loadLinks() {
+  async function loadLinks(key = adminKey) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/links`);
+      const response = await fetch(`${API_BASE_URL}/api/links`, {
+        headers: getAdminHeaders(key),
+      });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || 'Impossible de charger les liens');
+      if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthentication();
+        }
+        throw new Error(data.error?.message || 'Impossible de charger les liens');
+      }
       setLinks(data.links || []);
+      setIsAuthenticated(true);
+      setError('');
     } catch (requestError) {
       setError(requestError.message);
     }
+  }
+
+  async function submitAdminKey(event) {
+    event.preventDefault();
+    const candidateKey = adminKeyInput.trim();
+
+    if (!candidateKey) {
+      setError('La clé d’administration est obligatoire.');
+      return;
+    }
+
+    setError('');
+    setIsAuthenticating(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/links?limit=1`, {
+        headers: getAdminHeaders(candidateKey),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Connexion impossible');
+      }
+
+      sessionStorage.setItem('shortlink-admin-key', candidateKey);
+      setLinks(data.links || []);
+      setAdminKey(candidateKey);
+      setAdminKeyInput('');
+      setIsAuthenticated(true);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  }
+
+  function clearAuthentication() {
+    sessionStorage.removeItem('shortlink-admin-key');
+    setAdminKey('');
+    setAdminKeyInput('');
+    setIsAuthenticated(false);
+    setLinks([]);
+  }
+
+  function logout() {
+    setError('');
+    clearAuthentication();
   }
 
   async function handleSubmit(event) {
@@ -96,7 +163,7 @@ function App() {
 
       const response = await fetch(`${API_BASE_URL}/api/shorten`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders(adminKey, true),
         body: JSON.stringify(payload),
       });
 
@@ -171,7 +238,7 @@ function App() {
 
       const response = await fetch(`${API_BASE_URL}/api/links/${editingLink.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders(adminKey, true),
         body: JSON.stringify(payload),
       });
 
@@ -189,7 +256,7 @@ function App() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/links/${link.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminHeaders(adminKey, true),
         body: JSON.stringify({ isActive: !link.isActive }),
       });
 
@@ -231,6 +298,42 @@ function App() {
     window.open(buildShortUrl(link), '_blank', 'noopener,noreferrer');
   }
 
+  if (!isAuthenticated) {
+    return (
+      <main className="page-shell">
+        <section className="panel auth-panel" aria-labelledby="admin-login-title">
+          <div className="heading">
+            <p className="eyebrow">ShortLink sécurisé</p>
+            <h1 id="admin-login-title">Accès administrateur</h1>
+            <p className="auth-help" id="admin-key-help">
+              Saisissez la clé configurée sur le serveur pour gérer les liens.
+              Elle reste uniquement dans cet onglet.
+            </p>
+          </div>
+
+          <form className="shorten-form" onSubmit={submitAdminKey}>
+            <label htmlFor="admin-key">Clé d’administration</label>
+            <input
+              id="admin-key"
+              type="password"
+              value={adminKeyInput}
+              onChange={(event) => setAdminKeyInput(event.target.value)}
+              autoComplete="current-password"
+              aria-describedby="admin-key-help"
+              autoFocus
+              required
+            />
+            <button type="submit" disabled={isAuthenticating}>
+              {isAuthenticating ? 'Vérification...' : 'Se connecter'}
+            </button>
+          </form>
+
+          {error && <p className="message error" role="alert">{error}</p>}
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="page-shell">
       <section className="panel links-panel">
@@ -240,8 +343,9 @@ function App() {
             <h1>Liens créés</h1>
           </div>
           <div className="header-actions">
-            <button type="button" className="secondary-button" onClick={loadLinks}>Rafraîchir</button>
+            <button type="button" className="secondary-button" onClick={() => loadLinks()}>Rafraîchir</button>
             <button type="button" className="primary-button" onClick={openCreateModal}>Créer un lien</button>
+            <button type="button" className="logout-button" onClick={logout}>Se déconnecter</button>
           </div>
         </div>
 
@@ -435,6 +539,51 @@ function App() {
 }
 
 function Modal({ title, titleId, onClose, children }) {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const modal = modalRef.current;
+    const previouslyFocusedElement = document.activeElement;
+
+    if (!modal) return undefined;
+
+    const focusableElements = getFocusableElements(modal);
+    if (!modal.contains(document.activeElement)) {
+      (focusableElements[0] || modal).focus();
+    }
+
+    function trapFocus(event) {
+      if (event.key !== 'Tab') return;
+
+      const currentFocusableElements = getFocusableElements(modal);
+      if (currentFocusableElements.length === 0) {
+        event.preventDefault();
+        modal.focus();
+        return;
+      }
+
+      const firstElement = currentFocusableElements[0];
+      const lastElement = currentFocusableElements[currentFocusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+
+    modal.addEventListener('keydown', trapFocus);
+
+    return () => {
+      modal.removeEventListener('keydown', trapFocus);
+      if (previouslyFocusedElement instanceof HTMLElement) {
+        previouslyFocusedElement.focus();
+      }
+    };
+  }, []);
+
   function handleBackdropClick(event) {
     if (event.target === event.currentTarget) {
       onClose();
@@ -444,10 +593,12 @@ function Modal({ title, titleId, onClose, children }) {
   return (
     <div className="modal-backdrop" onMouseDown={handleBackdropClick}>
       <section
+        ref={modalRef}
         className="modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex="-1"
       >
         <div className="modal-header">
           <div>
@@ -462,6 +613,24 @@ function Modal({ title, titleId, onClose, children }) {
       </section>
     </div>
   );
+}
+
+function getAdminHeaders(key, includeJson = false) {
+  const headers = {
+    'X-Admin-Key': key,
+  };
+
+  if (includeJson) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  return headers;
+}
+
+function getFocusableElements(container) {
+  return Array.from(container.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )).filter((element) => !element.hasAttribute('hidden'));
 }
 
 function getCodeFromShortUrl(shortUrl) {

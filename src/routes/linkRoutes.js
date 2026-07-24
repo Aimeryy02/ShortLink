@@ -6,13 +6,14 @@ const {
   removeLink,
   shortenLink,
 } = require('../controllers/linkController');
+const { requireAdminKey } = require('../middlewares/adminAuthMiddleware');
 
 const router = express.Router();
 
-router.post('/shorten', shortenLink);
-router.get('/links', getLinks);
-router.get('/links/:id', getLink);
-router.patch('/links/:id', patchLink);
-router.delete('/links/:id', removeLink);
+router.post('/shorten', requireAdminKey, shortenLink);
+router.get('/links', requireAdminKey, getLinks);
+router.get('/links/:id', requireAdminKey, getLink);
+router.patch('/links/:id', requireAdminKey, patchLink);
+router.delete('/links/:id', requireAdminKey, removeLink);
 
 module.exports = router;

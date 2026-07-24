@@ -62,9 +62,10 @@ async function listLinks({ page, limit, sort, order, search, tags }) {
   const filter = {};
 
   if (search) {
+    const safeSearch = escapeRegExp(search);
     filter.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { originalUrl: { $regex: search, $options: 'i' } },
+      { title: { $regex: safeSearch, $options: 'i' } },
+      { originalUrl: { $regex: safeSearch, $options: 'i' } },
     ];
   }
 
@@ -126,6 +127,10 @@ async function deleteLink(id) {
   if (!link) {
     throw new AppError('Link not found', 404);
   }
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function validateObjectId(id) {

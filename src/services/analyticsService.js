@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const geoip = require('geoip-lite');
-const useragent = require('useragent');
 
 const Click = require('../models/Click');
 const Link = require('../models/Link');
@@ -10,7 +9,7 @@ async function trackClick(link, req) {
   try {
     logger.info(`Tracking click for link ${link._id}`);
 
-    const agent = useragent.parse(req.headers['user-agent'] || '');
+    const agent = parseUserAgent(req.headers['user-agent']);
     const referer = req.headers.referer || req.headers.referrer || 'direct';
     const clientIp = getClientIp(req);
     const geo = geoip.lookup(clientIp);
@@ -19,9 +18,9 @@ async function trackClick(link, req) {
     await Click.create({
       linkId: link._id,
       clickedAt,
-      browser: agent.family || 'unknown',
-      os: agent.os?.family || 'unknown',
-      device: normalizeDevice(agent.device?.family),
+      browser: agent.browser,
+      os: agent.os,
+      device: agent.device,
       ip: hashIP(clientIp),
       country: geo?.country || 'unknown',
       referer,
@@ -81,12 +80,29 @@ function getLanguage(req) {
   return req.headers['accept-language']?.split(',')[0] || 'unknown';
 }
 
-function normalizeDevice(deviceFamily = 'Other') {
-  if (deviceFamily === 'Other') {
-    return 'desktop';
-  }
+function parseUserAgent(value = '') {
+  const userAgent = String(value).slice(0, 512);
 
-  return deviceFamily;
+  const browserMatchers = [
+    ['Edge', /Edg\/[\d.]+/],
+    ['Firefox', /Firefox\/[\d.]+/],
+    ['Chrome', /(?:Chrome|CriOS)\/[\d.]+/],
+    ['Safari', /Version\/[\d.]+.*Safari/],
+  ];
+  const browser = browserMatchers.find(([, pattern]) => pattern.test(userAgent))?.[0] || 'unknown';
+
+  let os = 'unknown';
+  if (userAgent.includes('Windows NT')) os = 'Windows';
+  else if (userAgent.includes('Android')) os = 'Android';
+  else if (/(?:iPhone|iPad|iPod)/.test(userAgent)) os = 'iOS';
+  else if (userAgent.includes('Mac OS X')) os = 'macOS';
+  else if (userAgent.includes('Linux')) os = 'Linux';
+
+  let device = 'desktop';
+  if (/(?:iPad|Tablet)/i.test(userAgent)) device = 'tablet';
+  else if (/(?:Mobile|Android|iPhone|iPod)/i.test(userAgent)) device = 'mobile';
+
+  return { browser, os, device };
 }
 
 module.exports = {

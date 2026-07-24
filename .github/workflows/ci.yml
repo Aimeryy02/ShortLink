@@ -74,10 +74,10 @@ jobs:
         run: npm ci
       
       - name: Run npm audit
-        run: npm audit --audit-level=moderate || true
+        run: npm audit --audit-level=moderate
       
       - name: Check for security vulnerabilities
-        run: npm audit --json > audit-report.json || true
+        run: npm audit --json > audit-report.json
 
   status-checks:
     needs: [test, build-frontend, quality]
@@ -86,7 +86,7 @@ jobs:
     steps:
       - name: Decide workflow status
         run: |
-          if [ "${{ needs.test.result }}" == "failure" ] || [ "${{ needs.build-frontend.result }}" == "failure" ]; then
+          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build-frontend.result }}" != "success" ] || [ "${{ needs.quality.result }}" != "success" ]; then
             echo "CI checks failed"
             exit 1
           fi

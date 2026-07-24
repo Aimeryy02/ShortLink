@@ -87,10 +87,15 @@ describe('linkService.listLinks', () => {
     });
     Link.countDocuments.mockResolvedValue(0);
 
-    await listLinks({ page: 1, limit: 10, sort: 'createdAt', order: 'desc', search: 'test' });
+    await listLinks({ page: 1, limit: 10, sort: 'createdAt', order: 'desc', search: 'test.+' });
 
     expect(Link.find).toHaveBeenCalledWith(
-      expect.objectContaining({ $or: expect.any(Array) })
+      expect.objectContaining({
+        $or: [
+          { title: { $regex: 'test\\.\\+', $options: 'i' } },
+          { originalUrl: { $regex: 'test\\.\\+', $options: 'i' } },
+        ],
+      }),
     );
   });
 

@@ -34,7 +34,7 @@ Réalisé dans le cadre du **Bloc 2 RNCP : Concevoir et développer des applicat
 - **express-rate-limit** - Rate limiting
 - **Pino** - Logging structuré
 - **Jest** - Tests unitaires
-- **useragent** + **geoip-lite** - Analytics
+- **geoip-lite** + parseur interne borné - Analytics
 
 ### Frontend
 - **React** 18 - Interface utilisateur
@@ -178,12 +178,12 @@ npm start              # Démarrer le serveur
 ### Résultat des Tests
 
 ```
-✅ 11 test suites passed
-✅ 62 tests passed
-✅ 92.91% statement coverage
-✅ 79.50% branch coverage
-✅ 97.91% function coverage
-✅ 92.77% line coverage
+✅ 12 test suites passed
+✅ 70 tests passed
+✅ 91.98% statement coverage
+✅ 80% branch coverage
+✅ 98% function coverage
+✅ 93.43% line coverage
 ```
 
 Exécuter les tests:
@@ -201,15 +201,16 @@ npm run test:coverage    # Avec rapport de couverture
 
 | Risque OWASP | Mesure | Localisation |
 |---|---|---|
-| **A01** - Contrôle d'accès | Validation des droits | `linkController.js` |
-| **A02** - Défaillances cryptographiques | HTTPS, secrets en `.env` | `.env.example`, `.gitignore` |
-| **A03** - Injection | Validation Zod, Mongoose | `linkValidation.js` |
-| **A04** - Conception non sécurisée | Architecture séparée | `src/` structure |
-| **A05** - Misconfiguration | Helmet, CORS limité | `app.js` |
-| **A06** - Composants vulnérables | `npm audit`, dépendances | `package.json` |
-| **A08** - Intégrité données | CI/CD, tests | GitHub Actions |
-| **A09** - Logging insuffisant | Pino logger | `config/logger.js` |
-| **A10** - SSRF | Validation URLs | `validationService.js` |
+| **A01:2025** - Contrôle d'accès | Clé requise sur les routes de gestion | `adminAuthMiddleware.js` |
+| **A02:2025** - Mauvaise configuration | Helmet, CORS limité, limites de requêtes | `app.js` |
+| **A03:2025** - Chaîne logicielle | Lockfile, CI et audit npm | `package-lock.json` |
+| **A04:2025** - Cryptographie | HTTPS et secrets hors du dépôt | `.env.example`, `.gitignore` |
+| **A05:2025** - Injection | Zod et recherche regex échappée | `linkValidation.js`, `linkService.js` |
+| **A06:2025** - Conception non sécurisée | Séparation routes publiques/privées | `src/routes/` |
+| **A07:2025** - Authentification | Clé longue, comparaison à temps constant | `adminAuthMiddleware.js` |
+| **A08:2025** - Intégrité | CI, Git et builds reproductibles | GitHub Actions |
+| **A09:2025** - Journalisation | Pino et logs de refus sans secret | `config/logger.js` |
+| **A10:2025** - Conditions exceptionnelles | Erreurs centralisées et réponses contrôlées | `errorMiddleware.js` |
 
 ---
 
@@ -228,7 +229,8 @@ npm run test:coverage    # Avec rapport de couverture
 
 ## 📊 Statut du Bloc 2 RNCP
 
-**ShortLink est COMPLÈTEMENT CONFORME aux critères RNCP Bloc 2** ✅
+**Validation du Bloc 2 en cours, critère par critère, avec preuves
+reproductibles.**
 
 ### Critères de Validation
 
@@ -237,9 +239,9 @@ npm run test:coverage    # Avec rapport de couverture
 | **C2.1.1** | Infrastructure multi-env | [01-Manuel-deploiement.md](docs/01-Manuel-deploiement.md) | ✅ |
 | **C2.1.2** | Intégration Continue (CI/CD) | [.github/workflows/ci.yml](.github/workflows/ci.yml) | ✅ |
 | **C2.2.1** | Architecture logicielle en couches | [Architecture ci-dessus](#-architecture) | ✅ |
-| **C2.2.2** | Tests unitaires 70%+ | [npm run test:coverage](#-tests--couverture) - **92.91%** | ✅ |
-| **C2.2.3** | Sécurité OWASP 10/10 | [06-Securite-Accessibilite.md](docs/06-Securite-Accessibilite.md) | ✅ |
-| **C2.2.3** | Accessibilité WCAG AA | [06-Securite-Accessibilite.md](docs/06-Securite-Accessibilite.md) - **Lighthouse 92** | ✅ |
+| **C2.2.2** | Tests unitaires 70%+ | [npm run test:coverage](#-tests--couverture) - **91.98%** | ✅ |
+| **C2.2.3** | Sécurité OWASP | Mesures OWASP 2025, clé administrateur, audit npm à 0 | ⏳ preuve production |
+| **C2.2.3** | Accessibilité RGAA 4.1.2 | Correctifs intégrés, audit manuel/Lighthouse à exécuter | ⏳ |
 | **C2.2.4** | Versioning CHANGELOG + tags | [CHANGELOG.md](CHANGELOG.md) - v1.0.0 | ✅ |
 | **C2.3.1** | Cahier de recettes fonctionnelles | [04-Cahier-recettes.md](docs/04-Cahier-recettes.md) - **20 validées** | ✅ |
 | **C2.3.2** | Plan correction bugs | [05-Plan-correction-bugs.md](docs/05-Plan-correction-bugs.md) - **6 corrigés** | ✅ |
@@ -252,10 +254,10 @@ Pour une validation **point par point détaillée** avec justifications, voir: *
 ### Résumé des Livrables
 
 ```
-✅ Tests: 62 tests, 92.91% couverture des instructions
-✅ Sécurité: 10/10 catégories OWASP 2021 traitées
-✅ Accessibilité: WCAG 2.1 Level AA conforme
-✅ Documentation: 2500+ lignes (6 documents)
+✅ Tests: 70 tests, 91.98% couverture des instructions
+⏳ Sécurité: mesures documentées pour les 10 catégories OWASP 2025, preuve production en cours
+⏳ Accessibilité: RGAA 4.1.2 choisi, contrôles manuels et Lighthouse à conserver
+✅ Documentation: livrée séparément sous forme de PDF
 ✅ CI/CD: GitHub Actions automatisé
 ✅ Versioning: CHANGELOG v1.0.0 + tags Git
 ```
@@ -310,10 +312,13 @@ BASE_URL=http://localhost:3000
 
 MONGO_URI=mongodb://localhost:27017/shortlink
 
-BCRYPT_ROUNDS=10
+CLIENT_URL=http://127.0.0.1:5173
+ADMIN_API_KEY=une-cle-aleatoire-de-32-caracteres-minimum
 
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=10
+REDIRECT_RATE_LIMIT_WINDOW_MS=60000
+REDIRECT_RATE_LIMIT_MAX_REQUESTS=120
 
 SHORT_CODE_LENGTH=6
 MAX_URL_LENGTH=2048
@@ -604,9 +609,14 @@ shortlink/
 ## Securite mise en place
 
 - `helmet` pour renforcer les headers HTTP
-- `cors` configure globalement
+- `cors` limite aux origines frontend configurees
 - `express-rate-limit` applique aux routes `/api`
+- limitation distincte des redirections publiques
+- acces par cle d'administration aux routes de creation et de gestion
+- cle d'au moins 32 caracteres comparee a temps constant et jamais journalisee
+- corps HTTP limites a 20 Ko
 - Validation Zod des entrees utilisateur
+- recherche MongoDB bornee et caracteres de regex echappes
 - Refus des URLs non HTTP/HTTPS
 - Protection anti-phishing basique :
   - patterns suspects `paypal.*verify`, `amazon.*account.*suspend`, `banking.*login`
@@ -614,6 +624,7 @@ shortlink/
   - blacklist de domaines dans `validationService.js`
 - IP des clics hashee avant stockage
 - Erreurs centralisees via middleware global
+- dependances verrouillees et `npm audit` sans vulnerabilite connue au 24/07/2026
 
 ## Analytics
 
@@ -652,8 +663,7 @@ Formats actuellement supportes :
 
 ## Limites connues
 
-- Pas d'authentification utilisateur
-- Pas de dashboard frontend
+- Une cle d'administration unique, sans comptes nominatifs ni roles
 - Pas d'export CSV/JSON
 - Pas de Swagger
 - Pas de protection par mot de passe
@@ -664,8 +674,7 @@ Formats actuellement supportes :
 
 ## Ameliorations futures
 
-- Ajouter une authentification JWT
-- Ajouter un dashboard frontend
+- Remplacer la cle unique par des comptes nominatifs et des roles
 - Ajouter l'export CSV/JSON des statistiques
 - Ajouter Swagger/OpenAPI
 - Ajouter la protection par mot de passe

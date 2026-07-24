@@ -39,7 +39,7 @@ const listLinksQuerySchema = z.object({
     .enum(['createdAt', 'clicks', 'originalUrl', 'title', 'expiresAt'])
     .default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
-  search: z.string().trim().optional(),
+  search: z.string().trim().max(100).optional(),
   tags: z
     .union([z.string(), z.array(z.string())])
     .optional()
