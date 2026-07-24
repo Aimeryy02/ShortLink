@@ -280,6 +280,12 @@ h2 {
   margin: 0 0 8px;
 }
 
+.link-title {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
 .muted {
   margin: 0 0 8px;
   color: #64748b;

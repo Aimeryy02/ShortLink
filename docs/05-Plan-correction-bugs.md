@@ -143,6 +143,25 @@
 | **Statut** | ✅ CORRIGÉ |
 | **Date correction** | 2026-07-24 |
 
+### BUG-008: Ordre des titres non séquentiel sur le tableau de bord
+
+| Élément | Contenu |
+|---|---|
+| **ID** | BUG-008 |
+| **Titre** | Hiérarchie de titres non séquentielle (h1 → h3) sur le tableau de bord |
+| **Gravité** | 🟡 MINEURE (accessibilité RGAA / Lighthouse) |
+| **Date découverte** | 2026-07-24 |
+| **Contexte** | Audit Lighthouse en production sur le tableau de bord connecté |
+| **Étapes de reproduction** | 1. Lighthouse (Accessibility) sur `short-link-omega.vercel.app` connecté |
+| **Résultat attendu** | Score 100, hiérarchie de titres séquentielle |
+| **Résultat obtenu** | Score 96 — « Heading elements are not in a sequentially-descending order » (h1 « Liens créés » puis h3 des cartes) |
+| **Cause root** | Les titres de cartes utilisaient `<h3>` directement sous le `<h1>` de la section, sans `<h2>` |
+| **Fichier** | `client/src/main.jsx` (+ `.link-title` dans `client/src/styles.css`) |
+| **Correction** | Titre de carte passé de `<h3>` à `<h2 class="link-title">` (séquence `h1 → h2`), taille visuelle conservée par CSS |
+| **Test ajouté** | Vérification de la séquence des titres via script (aucun saut de niveau) |
+| **Statut** | ✅ CORRIGÉ |
+| **Date correction** | 2026-07-24 |
+
 ---
 
 ## Bogues Non Corrigés (Backlog)
@@ -181,9 +200,9 @@
 |---|---|---|---|
 | Critique | 2 | 2 | 0 |
 | Majeure | 3 | 3 | 0 |
-| Mineure | 2 | 2 | 0 |
+| Mineure | 3 | 3 | 0 |
 | Feature | 2 | 0 | 2 |
-| **Total** | **9** | **7** | **2** |
+| **Total** | **10** | **8** | **2** |
 
 **Statut global**: ✅ **PRODUCTION READY - Tous les bugs critiques corrigés**
 

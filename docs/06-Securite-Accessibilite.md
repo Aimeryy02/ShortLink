@@ -206,9 +206,10 @@ Vérifications du 24 juillet 2026 (preuves dans `perso/preuves/`) :
 - authentification admin **déployée et vérifiée en production** :
   `GET /api/links` renvoie `401` sans clé (et avec clé erronée) et `200` avec la
   clé valide ;
-- audit Lighthouse Accessibility : **94/100** en production initiale, une seule
-  alerte de contraste, corrigée (vert `#16a34a` → `#15803d`) ; **100/100, 0
-  échec** après correction (vérifié en local) ;
+- audit Lighthouse Accessibility : **page publique** 94 → **100** (contraste du
+  vert corrigé `#16a34a` → `#15803d`) et **tableau de bord** 96 → **100** (ordre
+  des titres corrigé : les titres de cartes passent de `h3` à `h2`, séquence
+  `h1 → h2`) ; 0 échec après corrections ;
 - navigation clavier vérifiée par parcours E2E (Puppeteer) : focus piégé dans
   les modales, **restauré au déclencheur** après `Échap`, focus visible.
 

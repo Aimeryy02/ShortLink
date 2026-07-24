@@ -365,7 +365,7 @@ function App() {
             return (
               <article className="link-card" key={link.id}>
                 <div>
-                  <h3>{link.title || 'Sans titre'}</h3>
+                  <h2 className="link-title">{link.title || 'Sans titre'}</h2>
                   <p className="muted">{link.originalUrl}</p>
                   <button type="button" className="inline-link-button" onClick={() => openLink(link)}>
                     {shortUrl}
