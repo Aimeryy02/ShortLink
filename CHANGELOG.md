@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-07-24
+
+### Added
+- Protection des opérations de gestion par clé d'administration (`X-Admin-Key`)
+- Écran de connexion administrateur côté frontend (clé en `sessionStorage`)
+
+### Fixed
+- Accessibilité (RGAA) : contraste insuffisant du vert de marque corrigé
+  (`#16a34a` → `#15803d`)
+- Accessibilité : restauration du focus sur le déclencheur après fermeture d'une
+  modale (BUG-007)
+- Mise en cache des liens expirés ou désactivés évitée
+
+### Security
+- Comparaison de la clé d'administration à temps constant (`timingSafeEqual`)
+- CORS restreint au frontend autorisé
+- Remplacement de dépendances vulnérables : `npm audit` à 0 vulnérabilité
+
+### Testing
+- 70 tests unitaires (12 suites) — couverture 91,98 % statements, 80 % branches,
+  98 % fonctions, 93,43 % lignes
+- Cahier de recettes exécuté sur base réelle (24/24) et audit Lighthouse
+  accessibilité 100/100 après correction
+
 ## [1.0.0] - 2026-07-21
 
 ### Added

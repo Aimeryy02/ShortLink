@@ -38,7 +38,7 @@
 | **Cause root** | Fonction `formatDisplayDate` utilisée mais non définie |
 | **Fichier** | `client/src/` (nécessite accès frontend) |
 | **Correction** | Ajouter fonction utilitaire ou utiliser `toLocaleDateString()` |
-| **Test ajouté** | Vérification du format de date |
+| **Test ajouté** | Aucun test frontend automatisé (hors périmètre Jest actuel) ; vérifié manuellement dans l'interface |
 | **Statut** | ✅ CORRIGÉ |
 | **Date correction** | 2026-07-20 |
 
@@ -50,15 +50,16 @@
 | **Titre** | Champ "title" ignoré lors de la création |
 | **Gravité** | 🟠 MAJEURE |
 | **Date découverte** | 2026-07-20 |
-| **Contexte** | API - POST /api/links |
-| **Étapes de reproduction** | 1. POST avec `{"originalUrl": "...", "title": "Mon titre"}`, 2. GET lien |
+| **Contexte** | API - `POST /api/shorten` |
+| **Étapes de reproduction** | 1. `POST /api/shorten` avec `{"originalUrl": "...", "title": "Mon titre"}`, 2. GET lien |
 | **Résultat attendu** | Lien retourné avec title="Mon titre" |
 | **Résultat obtenu** | Lien retourné avec title=undefined |
 | **Cause root** | Fonction `createShortLink` n'utilise pas le paramètre `title` |
-| **Fichier** | `src/services/linkService.js` ligne 7 |
+| **Fichier** | `src/services/linkService.js` |
 | **Correction** | Ajouter `title` au paramètre destructuré et à `Link.create()` |
 | **Code corrigé** | `async function createShortLink({ originalUrl, customAlias, expiresAt, title })` |
 | **Test ajouté** | `linkService.test.js` - test avec title |
+| **Vérifié par recette** | REC-015 (PATCH title `200`) et création avec titre |
 | **Statut** | ✅ CORRIGÉ |
 | **Date correction** | 2026-07-20 |
 
@@ -74,11 +75,11 @@
 | **Étapes de reproduction** | 1. npm test dans boucle, 2. Après 100 requêtes |
 | **Résultat attendu** | Tous les tests passent |
 | **Résultat obtenu** | Erreur 429 "Too Many Requests" |
-| **Cause root** | Rate limit appliqué à tous les endpoints (tests n'exempt pas localhost) |
+| **Cause root** | Limite de requêtes trop basse pour des essais répétés en local |
 | **Fichier** | `src/config/rateLimit.js` |
-| **Correction** | Configurer `rateLimit` par environnement (disabled en NODE_ENV=test) |
-| **Code corrigé** | `const limit = process.env.NODE_ENV === 'test' ? (req, res, next) => next() : rateLimit(...)` |
-| **Test ajouté** | Vérification en NODE_ENV=test |
+| **Correction** | Rendre la limite configurable par variables d'environnement et l'ajuster selon l'environnement |
+| **Code corrigé** | `const max = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 10);` |
+| **Test ajouté** | Vérification : limite basse ⇒ `429` (cf. REC-017 du cahier de recettes) |
 | **Statut** | ✅ CORRIGÉ |
 | **Date correction** | 2026-07-20 |
 
@@ -87,11 +88,11 @@
 | Élément | Contenu |
 |---|---|
 | **ID** | BUG-005 |
-| **Titre** | GET /qr avec size invalide retourne erreur 500 au lieu de 400 |
+| **Titre** | QR avec taille invalide retourne 500 au lieu de 400 |
 | **Gravité** | 🟡 MINEURE |
 | **Date découverte** | 2026-07-21 |
-| **Contexte** | API - GET /qr/code?size=999 |
-| **Étapes de reproduction** | 1. GET /qr/abc123?size=999 |
+| **Contexte** | API - `GET /api/qr/:code?size=999` |
+| **Étapes de reproduction** | 1. `GET /api/qr/:code?size=999` |
 | **Résultat attendu** | Erreur 400 "Invalid QR code size" |
 | **Résultat obtenu** | Erreur 500 non structurée |
 | **Cause root** | `parseSize()` lance erreur dans try/catch global |
@@ -111,16 +112,36 @@
 | **Gravité** | 🔴 CRITIQUE (rare) |
 | **Date découverte** | Test de charge - 2026-07-21 |
 | **Contexte** | Deux créations simultanées peuvent générer le même code |
-| **Étapes de reproduction** | 1. Parallel requests POST /api/links 1000x |
-| **Résultat attendu** | Tous les shortCode uniques |
-| **Résultat obtenu** | ~0.1% de duplication |
-| **Cause root** | `generateUniqueShortCode` a condition de course MongoDB |
-| **Fichier** | `src/services/linkService.js` ligne 55 |
-| **Correction** | Ajouter index unique MongoDB ou augmenter tentatives |
-| **Code corrigé** | Ajouter index: `Link.create` avec `unique: true` sur shortCode |
-| **Test ajouté** | Test de concurrence (50 requêtes parallèles) |
-| **Statut** | ✅ CORRIGÉ (à court terme augmenté MAX_ATTEMPTS à 20) |
+| **Étapes de reproduction** | 1. Créations concurrentes via `POST /api/shorten` |
+| **Résultat attendu** | Tous les `shortCode` uniques |
+| **Résultat obtenu** | Risque de collision sur code identique |
+| **Cause root** | `generateUniqueShortCode` : fenêtre de course possible avant écriture |
+| **Fichier** | `src/models/Link.js` (schéma) et `src/services/linkService.js` |
+| **Correction** | Index `unique` MongoDB sur `shortCode` + relance sur collision |
+| **Code corrigé** | `shortCode: { type: String, required: true, unique: true }` (modèle `Link`) ; `MAX_SHORT_CODE_ATTEMPTS = 10` |
+| **Test ajouté** | Tests unitaires de génération (`shortCodeService.test.js`) ; pas de test de concurrence automatisé |
+| **Statut** | ✅ CORRIGÉ (index unique en place ; relance jusqu'à 10 tentatives) |
 | **Date correction** | 2026-07-21 |
+
+### BUG-007: Focus non restauré après fermeture d'une modale
+
+| Élément | Contenu |
+|---|---|
+| **ID** | BUG-007 |
+| **Titre** | Le focus ne revient pas au déclencheur après fermeture d'une modale |
+| **Gravité** | 🟠 MAJEURE (accessibilité RGAA) |
+| **Date découverte** | 2026-07-24 |
+| **Contexte** | Frontend — modales de création/modification, navigation clavier |
+| **Étapes de reproduction** | 1. Focus « Créer un lien », 2. `Entrée` pour ouvrir, 3. `Échap` pour fermer |
+| **Résultat attendu** | Focus rendu au bouton « Créer un lien » |
+| **Résultat obtenu** | Focus perdu sur `<body>` |
+| **Cause root** | L'attribut `autoFocus` du premier champ s'exécute pendant le commit React, avant le `useEffect` de la modale ; `previouslyFocusedElement` capturait un champ interne (démonté à la fermeture) au lieu du déclencheur |
+| **Fichier** | `client/src/main.jsx` (composant `Modal` + champs `originalUrl` / `edit-title`) |
+| **Correction** | Retrait d'`autoFocus` sur les champs de modale ; la modale capture le déclencheur puis focalise le premier champ |
+| **Code corrigé** | `const firstField = modal.querySelector('input, select, textarea, ...'); (firstField || focusableElements[0] || modal).focus();` |
+| **Test ajouté** | Vérifié par parcours E2E navigateur (script Puppeteer, hors dépendances projet) : focus piégé 8/8, restauration au déclencheur, focus visible |
+| **Statut** | ✅ CORRIGÉ |
+| **Date correction** | 2026-07-24 |
 
 ---
 
@@ -144,13 +165,13 @@
 | Élément | Contenu |
 |---|---|
 | **ID** | FUTURE-002 |
-| **Titre** | Pas d'authentification multi-utilisateurs |
+| **Titre** | Pas de comptes multi-utilisateurs |
 | **Gravité** | 🟡 MINEURE |
-| **Cause** | Scope du MVP |
-| **Solution proposée** | Ajouter JWT + table Users |
+| **Cause** | Périmètre du MVP mono-administrateur (SWOT : « absence de base d'utilisateurs ») |
+| **Solution proposée** | Ajouter JWT + collection Users si un besoin multi-comptes apparaît |
 | **Priorité** | Moyen |
 | **Effort** | Élevé |
-| **Blocker?** | Non (Bloc 2 OK sans auth) |
+| **État actuel** | Les opérations de gestion sont protégées par une clé d'administration (`X-Admin-Key`) ; le multi-utilisateur reste une évolution future |
 
 ---
 
@@ -159,10 +180,10 @@
 | Type | Nombre | Corrigés | Backlog |
 |---|---|---|---|
 | Critique | 2 | 2 | 0 |
-| Majeure | 2 | 2 | 0 |
+| Majeure | 3 | 3 | 0 |
 | Mineure | 2 | 2 | 0 |
 | Feature | 2 | 0 | 2 |
-| **Total** | **8** | **6** | **2** |
+| **Total** | **9** | **7** | **2** |
 
 **Statut global**: ✅ **PRODUCTION READY - Tous les bugs critiques corrigés**
 

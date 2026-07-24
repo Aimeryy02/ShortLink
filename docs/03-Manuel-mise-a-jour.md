@@ -36,7 +36,7 @@ npm install
 npm test
 ```
 
-Tous les 56 tests doivent passer (aucune erreur).
+Tous les 70 tests doivent passer (aucune erreur).
 
 ---
 
@@ -87,7 +87,7 @@ npm test
 npm run test:coverage
 
 # Vérifier aucune régression
-# Couverture doit rester ≥ 92%
+# Le seuil bloquant Jest est 70 % ; la couverture mesurée est d'environ 92 %
 ```
 
 ### 5. Commit
@@ -146,8 +146,8 @@ Le pipeline CI/CD démarre automatiquement:
 
 ```
 ✅ Installer les dépendances
-✅ Lancer les tests (56 tests)
-✅ Vérifier la couverture (92%+)
+✅ Lancer les tests (70 tests)
+✅ Vérifier la couverture (seuil bloquant 70 %, mesurée ~92 %)
 ✅ Construire le frontend
 ✅ Audit de sécurité (npm audit)
 ```
@@ -191,10 +191,13 @@ git branch -d feature/nom
 
 ### Après fusion dans `main`
 
-GitHub Actions redéploie automatiquement:
+GitHub Actions exécute l'intégration continue (tests, couverture, build,
+audit). Le déploiement n'est **pas** réalisé par GitHub Actions : Render et
+Vercel sont connectés au dépôt et déclenchent leurs propres redéploiements
+après un push sur `main`.
 
-1. **Backend (Render)** - ✅ API redémarrée
-2. **Frontend (Vercel)** - ✅ Site rebuilt
+1. **Backend (Render)** - ✅ API redéployée via l'intégration Render/GitHub
+2. **Frontend (Vercel)** - ✅ Site reconstruit via l'intégration Vercel/GitHub
 
 Voir l'état sur:
 - [Render Dashboard](https://render.com)
@@ -203,11 +206,14 @@ Voir l'état sur:
 ### Vérifier le déploiement
 
 ```bash
-# Tester l'API
-curl https://shortlink-api.render.com/api/links
+# Tester l'API (route publique)
+curl https://shortlink-whkw.onrender.com/health
+
+# La liste exige la clé d'administration
+curl -H "X-Admin-Key: <clé>" https://shortlink-whkw.onrender.com/api/links
 
 # Vérifier le frontend
-# Ouvrir https://shortlink.vercel.app
+# Ouvrir https://short-link-omega.vercel.app
 ```
 
 ### Publier une version
@@ -298,7 +304,7 @@ git checkout -b feature/bulk-delete
 # 3. Tester localement
 npm test
 npm run test:coverage
-# Doit afficher 92%+
+# Seuil bloquant 70 % ; couverture mesurée ~92 %
 
 # 4. Commit
 git add .
@@ -326,7 +332,7 @@ curl -X DELETE https://shortlink-api.render.com/api/links/bulk \
 ### ✅ À faire
 
 - Écrire des tests pour chaque nouvelle fonction
-- Maintenir la couverture ≥ 92%
+- Maintenir la couverture au-dessus du seuil bloquant de 70 % (actuellement ~92 %)
 - Utiliser des messages de commit descriptifs
 - Tester localement avant de pousser
 - Rebasculer sur `main` après fusion

@@ -1,277 +1,119 @@
-# Cahier de Recettes - ShortLink
+# Cahier de Recettes — ShortLink
 
-## Recettes Fonctionnelles
+## Contexte d'exécution
 
-### REC-001: Créer un lien court basique
-
-| Élément | Contenu |
+| Élément | Valeur |
 |---|---|
-| **ID** | REC-001 |
-| **Titre** | Créer un lien court avec code généré |
-| **Catégorie** | Fonctionnel - Création |
-| **Précondition** | API disponible, MongoDB connectée |
-| **Étapes** | 1. POST /api/links avec `{"originalUrl": "https://google.com"}` |
-| **Résultat attendu** | Réponse 201 avec shortCode (6 caractères alphanumériques) |
-| **Résultat obtenu** | ✅ Réponse 201, shortCode généré: "abc123" |
-| **Statut** | ✅ Validé |
+| **Date d'exécution** | 24 juillet 2026 |
+| **Testeur** | Aimery Garcia |
+| **Environnement** | Local — Node.js 24.14.1, serveur `http://localhost:3000` |
+| **Base de données** | MongoDB Atlas, base dédiée `shortlink_recette` (isolée de la production) |
+| **Authentification** | Clé d'administration via en-tête `X-Admin-Key` |
+| **Méthode** | Script Node reproductible (`fetch`) exécutant chaque recette et relevant le code HTTP et le corps de réponse réels |
+| **Résultat global** | 24 / 24 recettes conformes (22 API/sécurité + 2 accessibilité) |
 
-### REC-002: Créer un lien avec alias personnalisé
+Les recettes fonctionnelles, de validation et de sécurité ci-dessous ont été
+**exécutées** contre une base MongoDB réelle et l'API en fonctionnement. Les
+routes indiquées sont les routes réellement servies par l'application. Les
+recettes d'accessibilité (REC-019, REC-020) ont été **exécutées via un parcours
+navigateur automatisé (Puppeteer sur Chrome) et un audit Lighthouse** ; les
+captures et rapports sont conservés dans `perso/preuves/`.
 
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-002 |
-| **Titre** | Créer un lien avec alias personnalisé |
-| **Catégorie** | Fonctionnel - Création |
-| **Précondition** | Alias "mon-lien" n'existe pas |
-| **Étapes** | 1. POST /api/links avec `{"originalUrl": "https://google.com", "customAlias": "mon-lien"}` |
-| **Résultat attendu** | Réponse 201, shortUrl = "https://shortlink.app/mon-lien" |
-| **Résultat obtenu** | ✅ Réponse 201, alias correct |
-| **Statut** | ✅ Validé |
+> Remarque : les valeurs d'identifiants et de codes courts ci-dessous
+> (`sNK9Po`, `rec-alias-310600`, etc.) sont celles réellement générées lors de
+> l'exécution du 24 juillet 2026.
 
-### REC-003: Rejeter alias déjà utilisé
+## 1. Authentification (contrôle d'accès)
 
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-003 |
-| **Titre** | Rejeter alias déjà pris |
-| **Catégorie** | Fonctionnel - Validation |
-| **Précondition** | Alias "mon-lien" existe déjà |
-| **Étapes** | 1. POST /api/links avec customAlias="mon-lien" |
-| **Résultat attendu** | Réponse 400 "Custom alias is already taken" |
-| **Résultat obtenu** | ✅ Erreur 400 retournée |
-| **Statut** | ✅ Validé |
+| ID | Scénario | Route réelle | Attendu | Obtenu | Statut |
+|---|---|---|---|---|---|
+| AUTH-1 | Liste sans clé | `GET /api/links` | `401` | `401` — « Invalid administration key » | ✅ |
+| AUTH-2 | Liste avec clé erronée | `GET /api/links` (clé invalide) | `401` | `401` — « Invalid administration key » | ✅ |
+| AUTH-3 | Liste avec clé valide | `GET /api/links` (`X-Admin-Key`) | `200` | `200` — liste renvoyée | ✅ |
 
-### REC-004: Rejeter URL de phishing
+## 2. Recettes fonctionnelles
 
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-004 |
-| **Titre** | Bloquer les URLs détectées comme phishing |
-| **Catégorie** | Sécurité - Anti-phishing |
-| **Précondition** | Validation anti-phishing active |
-| **Étapes** | 1. POST /api/links avec `{"originalUrl": "https://example.tk/paypal-verify"}` |
-| **Résultat attendu** | Réponse 403 "URL detected as phishing" |
-| **Résultat obtenu** | ✅ Erreur 403 retournée |
-| **Statut** | ✅ Validé |
+| ID | Scénario | Route réelle | Attendu | Obtenu | Statut |
+|---|---|---|---|---|---|
+| REC-001 | Créer un lien (code généré) | `POST /api/shorten` `{originalUrl}` | `201` + `shortCode` 6 caractères | `201`, `shortCode=sNK9Po` | ✅ |
+| REC-002 | Créer avec alias personnalisé | `POST /api/shorten` `{originalUrl, customAlias}` | `201`, `shortUrl` finissant par l'alias | `201`, `shortUrl=…/rec-alias-310600` | ✅ |
+| REC-005 | Rediriger vers l'URL originale | `GET /:code` | `302` + `Location` | `302`, `Location=https://google.com` | ✅ |
+| REC-006 | Page de prévisualisation | `GET /:code+` | `200` HTML | `200`, `text/html` | ✅ |
+| REC-009 | Générer le QR code | `GET /api/qr/:code` | `200` `image/png` | `200`, `image/png` | ✅ |
+| REC-010 | QR code taille 600 | `GET /api/qr/:code?size=600` | `200` `image/png` | `200`, `image/png` | ✅ |
+| REC-011 | Compteur de clics | `GET /:code` puis `GET /api/links/:id` | `clicks` augmente | clics `1 → 3` après deux redirections | ✅ |
+| REC-012 | Statistiques d'un lien | `GET /api/links/:id/stats` | `200` + agrégats | `200`, clés `totalClicks, clicksByDay, clicksByCountry, clicksByBrowser, clicksByDevice, topReferers` | ✅ |
+| REC-013 | Pagination de la liste | `GET /api/links?page=1&limit=2` | `200` + pagination | `200`, `page=1 limit=2 pages=3` | ✅ |
+| REC-014 | Recherche | `GET /api/links?search=Google` | `200` + résultats filtrés | `200`, 2 résultats | ✅ |
+| REC-015 | Modifier un lien | `PATCH /api/links/:id` `{title}` | `200`, titre mis à jour | `200`, `title="Titre recette"` | ✅ |
+| REC-016 | Supprimer un lien (API) | `DELETE /api/links/:id` | `200` puis `404` | `delete=200`, `get après=404` | ✅ |
 
-### REC-005: Rediriger vers l'URL originale
+> Note de périmètre : la pagination (REC-013), la recherche (REC-014) et la
+> suppression (REC-016) sont disponibles au niveau de l'API mais ne sont pas
+> exposées dans l'interface de cette version du prototype (voir manuel
+> d'utilisation).
 
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-005 |
-| **Titre** | Redirection HTTP 302 vers URL originale |
-| **Catégorie** | Fonctionnel - Redirection |
-| **Précondition** | Lien "abc123" existe et est actif |
-| **Étapes** | 1. GET /abc123 |
-| **Résultat attendu** | Réponse 302, Location header = URL originale |
-| **Résultat obtenu** | ✅ Redirection 302 correcte |
-| **Statut** | ✅ Validé |
+## 3. Recettes d'expiration et d'activation
 
-### REC-006: Afficher preview de sécurité
+| ID | Scénario | Route réelle | Attendu | Obtenu | Statut |
+|---|---|---|---|---|---|
+| REC-007 | Bloquer un lien expiré | `GET /:code` (`expiresAt` passée) | `410` | `410` — « Link expired » | ✅ |
+| REC-008 | Bloquer un lien désactivé | `PATCH isActive:false` puis `GET /:code` | `403` | `patch=200`, redirect `403` — « Link is disabled » | ✅ |
 
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-006 |
-| **Titre** | Afficher page de preview avant redirection |
-| **Catégorie** | Sécurité - Preview |
-| **Précondition** | Lien "abc123" existe |
-| **Étapes** | 1. GET /abc123/preview |
-| **Résultat attendu** | Page HTML avec URL originale et bouton "Continuer" |
-| **Résultat obtenu** | ✅ Page affichée correctement |
-| **Statut** | ✅ Validé |
+## 4. Recettes de validation et de sécurité
 
-### REC-007: Bloquer lien expiré
+| ID | Scénario | Route réelle | Attendu | Obtenu | Statut |
+|---|---|---|---|---|---|
+| REC-003 | Rejeter un alias déjà pris | `POST /api/shorten` (alias existant) | `400` | `400` — « Custom alias is already taken » | ✅ |
+| REC-004 | Bloquer une URL signalée phishing | `POST /api/shorten` `{originalUrl: https://phishing-test.com}` | `403` | `403` — « URL detected as phishing » | ✅ |
+| REC-018 | Rejeter une URL non http/https | `POST /api/shorten` `{originalUrl: ftp://…}` | `400` | `400` — « Validation failed » | ✅ |
+| REC-010b | Rejeter une taille de QR invalide | `GET /api/qr/:code?size=999` | `400` | `400` — « Invalid QR code size. Allowed values are 200, 400 or 600 » | ✅ |
+| REC-017 | Limitation de requêtes | `GET /api/links` répété (instance limite=3) | `429` après la limite | requêtes 1-3 `200`, requêtes 4-6 `429` | ✅ |
 
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-007 |
-| **Titre** | Rejeter redirection d'un lien expiré |
-| **Catégorie** | Fonctionnel - Expiration |
-| **Précondition** | Lien avec expiresAt = date passée |
-| **Étapes** | 1. GET /lien-expire |
-| **Résultat attendu** | Réponse 410 "Link expired" |
-| **Résultat obtenu** | ✅ Erreur 410 retournée |
-| **Statut** | ✅ Validé |
+## 5. Recettes d'accessibilité — exécutées (navigateur + Lighthouse)
 
-### REC-008: Bloquer lien désactivé
+Exécutées le 24 juillet 2026 via un parcours automatisé Puppeteer (Chrome) sur
+l'application locale et un audit Lighthouse. Preuves : `perso/preuves/` (captures
+`01`→`05`, rapports `lighthouse-*.html`, `e2e-report.json`).
 
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-008 |
-| **Titre** | Rejeter redirection d'un lien désactivé |
-| **Catégorie** | Fonctionnel - Activation |
-| **Précondition** | Lien avec isActive = false |
-| **Étapes** | 1. GET /lien-desactive |
-| **Résultat attendu** | Réponse 403 "Link is disabled" |
-| **Résultat obtenu** | ✅ Erreur 403 retournée |
-| **Statut** | ✅ Validé |
+| ID | Scénario | Procédure | Attendu | Obtenu | Statut |
+|---|---|---|---|---|---|
+| REC-019 | Navigation clavier / focus | Ouvrir une modale au clavier, `Tab`/`Maj+Tab`, `Échap` | Focus piégé, restauré au déclencheur, focus visible | Focus piégé **8/8** dans le dialog, `Échap` ferme et **restaure le focus** sur « Créer un lien », focus visible (outline `3px solid`) | ✅ |
+| REC-020 | Contraste / audit automatisé | Lighthouse catégorie Accessibility | Score élevé, contrastes conformes | Prod initiale **94/100** (1 échec contraste sur le vert `#16a34a`) → après correction (`#15803d`) **100/100, 0 échec** (vérifié en local) | ✅ |
 
-### REC-009: Générer QR code
+> Deux corrections d'accessibilité ont découlé de ces recettes :
+> - **contraste** : vert de marque assombri `#16a34a` → `#15803d` (≥ 4.5:1) ;
+> - **restauration du focus** après fermeture de modale (voir BUG-007 du plan de
+>   correction des bogues).
+>
+> Ces corrections sont dans le code ; le **redéploiement** du frontend est
+> nécessaire pour que la production reflète le score 100/100.
 
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-009 |
-| **Titre** | Générer image QR code PNG |
-| **Catégorie** | Fonctionnel - QR Code |
-| **Précondition** | Lien "abc123" existe |
-| **Étapes** | 1. GET /qr/abc123 |
-| **Résultat attendu** | Réponse image/png, code scannable |
-| **Résultat obtenu** | ✅ Image PNG générée |
-| **Statut** | ✅ Validé |
+## 6. Résumé
 
-### REC-010: Taille QR code personnalisable
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-010 |
-| **Titre** | QR code avec tailles 200/400/600 |
-| **Catégorie** | Fonctionnel - QR Code |
-| **Précondition** | - |
-| **Étapes** | 1. GET /qr/abc123?size=600 |
-| **Résultat attendu** | Image PNG 600×600 pixels |
-| **Résultat obtenu** | ✅ Image correcte |
-| **Statut** | ✅ Validé |
-
-### REC-011: Tracker les clics
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-011 |
-| **Titre** | Incrémenter compteur et enregistrer click |
-| **Catégorie** | Fonctionnel - Analytics |
-| **Précondition** | Lien "abc123" existe |
-| **Étapes** | 1. GET /abc123, 2. Vérifier base de données |
-| **Résultat attendu** | Click enregistré avec navigateur, pays, appareil |
-| **Résultat obtenu** | ✅ Click enregistré |
-| **Statut** | ✅ Validé |
-
-### REC-012: Récupérer les statistiques
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-012 |
-| **Titre** | Consulter stats d'un lien |
-| **Catégorie** | Fonctionnel - Stats |
-| **Précondition** | Lien avec clics |
-| **Étapes** | 1. GET /api/stats/{id} |
-| **Résultat attendu** | JSON: totalClicks, clicksByDay, clicksByCountry, etc. |
-| **Résultat obtenu** | ✅ Données correctes |
-| **Statut** | ✅ Validé |
-
-### REC-013: Lister les liens avec pagination
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-013 |
-| **Titre** | Récupérer liste des liens paginée |
-| **Catégorie** | Fonctionnel - Listing |
-| **Précondition** | 50+ liens existent |
-| **Étapes** | 1. GET /api/links?page=1&limit=20 |
-| **Résultat attendu** | 20 liens, page=1, total=50 |
-| **Résultat obtenu** | ✅ Pagination correcte |
-| **Statut** | ✅ Validé |
-
-### REC-014: Rechercher dans les liens
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-014 |
-| **Titre** | Filtrer liens par titre |
-| **Catégorie** | Fonctionnel - Recherche |
-| **Précondition** | Liens avec titres divers |
-| **Étapes** | 1. GET /api/links?search=article |
-| **Résultat attendu** | Retourner liens avec "article" dans le titre |
-| **Résultat obtenu** | ✅ Filtrage correct |
-| **Statut** | ✅ Validé |
-
-### REC-015: Modifier un lien
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-015 |
-| **Titre** | Mettre à jour titre et tags |
-| **Catégorie** | Fonctionnel - Modification |
-| **Précondition** | Lien id="123" existe |
-| **Étapes** | 1. PATCH /api/links/123 avec `{"title": "Nouveau titre"}` |
-| **Résultat attendu** | Réponse 200, titre mis à jour |
-| **Résultat obtenu** | ✅ Modification correcte |
-| **Statut** | ✅ Validé |
-
-### REC-016: Supprimer un lien
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-016 |
-| **Titre** | Supprimer un lien existant |
-| **Catégorie** | Fonctionnel - Suppression |
-| **Précondition** | Lien id="123" existe |
-| **Étapes** | 1. DELETE /api/links/123 |
-| **Résultat attendu** | Réponse 200 "Link deleted", lien supprimé de la base |
-| **Résultat obtenu** | ✅ Suppression confirmée |
-| **Statut** | ✅ Validé |
-
-### REC-017: Rate limiting
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-017 |
-| **Titre** | Limiter les requêtes abusives |
-| **Catégorie** | Sécurité - Rate Limit |
-| **Précondition** | 100+ requêtes en 15 minutes |
-| **Étapes** | 1. Envoyer 150 requêtes rapidement |
-| **Résultat attendu** | Réponse 429 "Too Many Requests" après 100 requêtes |
-| **Résultat obtenu** | ✅ Rate limiting actif |
-| **Statut** | ✅ Validé |
-
-### REC-018: Validation URL HTTP/HTTPS
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-018 |
-| **Titre** | Rejeter URLs sans protocole HTTP/HTTPS |
-| **Catégorie** | Validation - URLs |
-| **Précondition** | - |
-| **Étapes** | 1. POST /api/links avec originalUrl="ftp://example.com" |
-| **Résultat attendu** | Réponse 400 "Invalid URL" |
-| **Résultat obtenu** | ✅ Erreur validation retournée |
-| **Statut** | ✅ Validé |
-
-### REC-019: Accessibilité - Navigation clavier
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-019 |
-| **Titre** | Naviguer dans l'application au clavier |
-| **Catégorie** | Accessibilité - RGAA |
-| **Précondition** | Application en ligne |
-| **Étapes** | 1. Appuyer sur Tab, 2. Vérifier focus visible, 3. Appuyer Enter |
-| **Résultat attendu** | Tous les boutons accessibles au clavier |
-| **Résultat obtenu** | ✅ Navigation clavier OK |
-| **Statut** | ✅ Validé |
-
-### REC-020: Accessibilité - Contraste
-
-| Élément | Contenu |
-|---|---|
-| **ID** | REC-020 |
-| **Titre** | Contraste suffisant (WCAG AA) |
-| **Catégorie** | Accessibilité - Contraste |
-| **Précondition** | - |
-| **Étapes** | 1. Utiliser Lighthouse audit |
-| **Résultat attendu** | Score accessibilité ≥ 90 |
-| **Résultat obtenu** | ✅ Score: 92 |
-| **Statut** | ✅ Validé |
-
----
-
-## Résumé
-
-| Catégorie | Total | Validé | Échoué |
+| Catégorie | Total | Exécutées conformes | À exécuter |
 |---|---|---|---|
+| Authentification | 3 | 3 | 0 |
 | Fonctionnel | 12 | 12 | 0 |
-| Sécurité | 4 | 4 | 0 |
+| Expiration / activation | 2 | 2 | 0 |
+| Validation / sécurité | 5 | 5 | 0 |
 | Accessibilité | 2 | 2 | 0 |
-| Validation | 2 | 2 | 0 |
-| **Total** | **20** | **20** | **0** |
+| **Total** | **24** | **24** | **0** |
 
-**Statut global**: ✅ **APPROUVÉ - Tous les critères validés**
+**Statut** : les 24 recettes ont été **exécutées et sont conformes**
+(fonctionnelles, validation, sécurité et authentification contre une base
+MongoDB réelle ; accessibilité via parcours navigateur et Lighthouse). Réserve :
+les deux correctifs d'accessibilité (contraste, restauration du focus) doivent
+être **redéployés** pour que la production affiche le score 100/100.
+
+## 7. Reproductibilité
+
+1. Configurer `.env` avec `MONGO_URI` et une `ADMIN_API_KEY` d'au moins
+   32 caractères.
+2. Démarrer le serveur : `npm start`.
+3. Exécuter chaque scénario ci-dessus avec l'en-tête `X-Admin-Key` pour les
+   routes de gestion (exemple avec `curl` dans le manuel de déploiement).
+4. Pour REC-017, réduire temporairement `RATE_LIMIT_MAX_REQUESTS` et répéter la
+   requête jusqu'au `429`.
+5. Relever le code HTTP et le corps de réponse réels, puis conserver les
+   captures avec date et environnement.

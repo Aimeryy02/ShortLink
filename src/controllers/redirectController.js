@@ -148,7 +148,7 @@ function renderPreviewPage(originalUrl, code) {
 
       .continue-link {
         color: #ffffff;
-        background: #16a34a;
+        background: #15803d;
       }
 
       .cancel-link {

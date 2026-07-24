@@ -49,11 +49,23 @@ MONGO_URI=mongodb://localhost:27017/shortlink
 PORT=3000
 NODE_ENV=development
 BASE_URL=http://localhost:3000
+CLIENT_URL=http://localhost:5173
 QR_DEFAULT_SIZE=400
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
+REDIRECT_RATE_LIMIT_WINDOW_MS=60000
+REDIRECT_RATE_LIMIT_MAX_REQUESTS=120
 LOG_LEVEL=info
 SHORT_CODE_LENGTH=6
+# Clé protégeant les opérations de gestion. Minimum 32 caractères.
+# Sans elle (ou si trop courte), l'administration renvoie 503.
+ADMIN_API_KEY=remplacer-par-un-secret-aleatoire-de-32-caracteres-minimum
+```
+
+Générer une clé aléatoire :
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### 3. Démarrer MongoDB
@@ -142,8 +154,15 @@ MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/shortlink
 NODE_ENV=production
 BASE_URL=https://shortlink-whkw.onrender.com
 CLIENT_URL=https://short-link-omega.vercel.app
+ADMIN_API_KEY=<clé aléatoire d'au moins 32 caractères>
 LOG_LEVEL=warn
 ```
+
+> **Important** : `ADMIN_API_KEY` est obligatoire en production. Si elle est
+> absente ou fait moins de 32 caractères, toutes les routes de gestion
+> répondent `503 Administration temporairement indisponible`. La générer
+> localement (commande ci-dessus) et la saisir uniquement dans Render — jamais
+> dans Vercel, GitHub ni dans une capture.
 
 #### 4. Deploy
 
@@ -325,7 +344,8 @@ git push
 
 ### Checklist
 
-- [x] API répond à `GET /api/links`
+- [x] API répond à `GET /health` (route publique)
+- [x] `GET /api/links` renvoie `401` sans clé et `200` avec la clé valide
 - [x] Frontend charge à `https://short-link-omega.vercel.app`
 - [x] Créer un lien test
 - [x] Vérifier redirection
@@ -336,14 +356,18 @@ git push
 
 ### Tests de Fumée
 
-```bash
-# De la console Vercel
-const res = await fetch('https://shortlink-whkw.onrender.com/api/links', {
+```js
+// Depuis la console du navigateur
+// La création passe par POST /api/shorten et exige la clé d'administration.
+const res = await fetch('https://shortlink-whkw.onrender.com/api/shorten', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Admin-Key': '<clé d'administration>',
+  },
   body: JSON.stringify({ originalUrl: 'https://example.com' })
 });
-console.log(res.status); // Doit être 201
+console.log(res.status); // 201 si la clé est valide, 401 sinon, 503 si non configurée
 ```
 
 ---

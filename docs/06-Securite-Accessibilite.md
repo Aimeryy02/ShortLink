@@ -196,9 +196,22 @@ Les tests couvrent notamment :
 7. Navigation clavier avec focus visible dans une modale.
 8. Vue responsive/zoom sans perte de contenu.
 
-## 9. Conclusion prudente
+## 9. Conclusion
 
 Le prototype comporte des mesures explicites et testées pour chacune des dix
-catégories OWASP 2025 et applique plusieurs exigences essentielles du
-RGAA 4.1.2. La validation finale de C2.2.3 nécessite encore le déploiement de la
-clé serveur et la conservation des preuves de contrôle RGAA en production.
+catégories OWASP 2025 et applique les exigences essentielles du RGAA 4.1.2.
+
+Vérifications du 24 juillet 2026 (preuves dans `perso/preuves/`) :
+
+- authentification admin **déployée et vérifiée en production** :
+  `GET /api/links` renvoie `401` sans clé (et avec clé erronée) et `200` avec la
+  clé valide ;
+- audit Lighthouse Accessibility : **94/100** en production initiale, une seule
+  alerte de contraste, corrigée (vert `#16a34a` → `#15803d`) ; **100/100, 0
+  échec** après correction (vérifié en local) ;
+- navigation clavier vérifiée par parcours E2E (Puppeteer) : focus piégé dans
+  les modales, **restauré au déclencheur** après `Échap`, focus visible.
+
+Réserve : les deux correctifs d'accessibilité (contraste, restauration du focus)
+doivent être **redéployés** sur Vercel pour que la production affiche 100/100 ;
+les notifications opérationnelles Render restent à configurer.

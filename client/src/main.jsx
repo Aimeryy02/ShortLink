@@ -406,7 +406,6 @@ function App() {
               placeholder="https://example.com/article/tres-long"
               value={originalUrl}
               onChange={(event) => setOriginalUrl(event.target.value)}
-              autoFocus
               required
             />
 
@@ -471,7 +470,6 @@ function App() {
               id="edit-title"
               value={editForm.title}
               onChange={(event) => setEditForm({ ...editForm, title: event.target.value })}
-              autoFocus
             />
 
             <label htmlFor="edit-original-url">URL de destination</label>
@@ -549,7 +547,8 @@ function Modal({ title, titleId, onClose, children }) {
 
     const focusableElements = getFocusableElements(modal);
     if (!modal.contains(document.activeElement)) {
-      (focusableElements[0] || modal).focus();
+      const firstField = modal.querySelector('input, select, textarea, [contenteditable="true"]');
+      (firstField || focusableElements[0] || modal).focus();
     }
 
     function trapFocus(event) {

@@ -43,7 +43,7 @@ input {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: #16a34a;
+  color: #15803d;
   font-size: 0.82rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -75,8 +75,8 @@ input {
 }
 
 input:focus {
-  outline: 3px solid rgba(22, 163, 74, 0.2);
-  border-color: #16a34a;
+  outline: 3px solid rgba(21, 128, 61, 0.25);
+  border-color: #15803d;
 }
 
 button:focus-visible,
@@ -102,7 +102,7 @@ input:focus-visible {
   border: 0;
   border-radius: 6px;
   color: #ffffff;
-  background: #16a34a;
+  background: #15803d;
   font-weight: 800;
   cursor: pointer;
 }
@@ -180,7 +180,7 @@ input:focus-visible {
 .primary-button {
   border: 0;
   color: #ffffff;
-  background: #16a34a;
+  background: #15803d;
   cursor: pointer;
 }
 

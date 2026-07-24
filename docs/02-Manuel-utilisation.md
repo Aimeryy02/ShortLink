@@ -26,7 +26,22 @@ La recherche, la pagination interactive, la suppression depuis l’interface,
 les statistiques détaillées et l’export CSV ne font pas partie de cette
 version du prototype.
 
-## 2. Créer un lien court
+## 2. Accès administrateur
+
+ShortLink est un outil mono-administrateur. Au premier accès, l’application
+affiche l’écran **Accès administrateur** et demande la **clé d’administration**.
+
+1. Saisir la clé fournie par le responsable de l’instance.
+2. Valider : le tableau de bord (liste des liens et actions de gestion)
+   s’affiche.
+3. La clé est conservée uniquement pour la session du navigateur
+   (`sessionStorage`) et un bouton permet de se **déconnecter**.
+
+Sans clé valide, seules les fonctions publiques restent accessibles
+(redirection d’un lien court, prévisualisation, QR code). Une clé absente ou
+incorrecte renvoie un refus et aucune donnée de gestion n’est exposée.
+
+## 3. Créer un lien court
 
 1. Cliquer sur **Créer un lien**, à côté de **Rafraîchir**.
 2. Une fenêtre de création s’ouvre.
@@ -48,7 +63,7 @@ Après la création, la fenêtre affiche :
 Lorsque l’alias est vide, ShortLink génère automatiquement un code court
 aléatoire.
 
-## 3. Utiliser un alias personnalisé
+## 4. Utiliser un alias personnalisé
 
 Un alias remplace le code généré automatiquement.
 
@@ -68,7 +83,7 @@ Les espaces, tirets bas et caractères spéciaux sont refusés. Un alias doit
 également être unique. Si l’alias existe déjà, la création est refusée et un
 message apparaît dans la fenêtre.
 
-## 4. Gérer les liens
+## 5. Gérer les liens
 
 Chaque carte contient :
 
@@ -86,7 +101,7 @@ Le bouton **Rafraîchir** recharge la liste. Lorsque l’utilisateur ouvre un li
 et revient sur l’application, la liste est également resynchronisée
 automatiquement.
 
-## 5. Modifier un lien
+## 6. Modifier un lien
 
 1. Cliquer sur **Modifier** dans la carte concernée.
 2. Une fenêtre de modification s’ouvre.
@@ -100,7 +115,7 @@ automatiquement.
 
 La liste est rechargée après l’enregistrement.
 
-## 6. Expiration et activation
+## 7. Expiration et activation
 
 ### Lien désactivé
 
@@ -117,7 +132,7 @@ Après modification d’une expiration passée vers une date future, le lien
 redevient accessible. Les réponses de redirection ne sont pas mises en cache,
 afin d’éviter de conserver un ancien état expiré.
 
-## 7. Preview et QR code
+## 8. Preview et QR code
 
 ### Preview
 
@@ -132,7 +147,7 @@ QR code est également affiché directement dans la fenêtre de résultat.
 Pour enregistrer l’image : clic droit sur le QR code, puis
 **Enregistrer l’image sous**.
 
-## 8. Validation et sécurité visibles
+## 9. Validation et sécurité visibles
 
 - seules les URL HTTP et HTTPS sont acceptées ;
 - les alias sont contrôlés et doivent être uniques ;
@@ -140,14 +155,21 @@ Pour enregistrer l’image : clic droit sur le QR code, puis
 - CORS autorise le frontend
   `https://short-link-omega.vercel.app` ;
 - les entrées sont validées côté serveur ;
+- les opérations de gestion exigent la clé d’administration (`X-Admin-Key`) ;
 - l’API applique des en-têtes de sécurité et une limitation de requêtes ;
 - les erreurs sont affichées sans faire planter l’interface.
 
-Le prototype ne possède pas encore de comptes utilisateurs ni
-d’authentification des opérations de gestion. Cette limite est documentée dans
-le dossier de sécurité.
+Les opérations de gestion (création, liste, modification, désactivation) sont
+protégées par une clé d’administration : l’application la demande au premier
+accès puis l’envoie via l’en-tête HTTP `X-Admin-Key`. Les redirections, la
+prévisualisation et le QR code restent publics.
 
-## 9. Utilisation mobile
+Conformément au périmètre du MVP, ShortLink ne gère pas de comptes utilisateurs
+multiples : c’est un outil mono-administrateur. Cette limite de périmètre, déjà
+identifiée dans le SWOT du dossier de conception (« absence de base
+d’utilisateurs »), est détaillée dans le dossier de sécurité.
+
+## 10. Utilisation mobile
 
 À moins de 600 pixels de largeur :
 
@@ -158,7 +180,7 @@ le dossier de sécurité.
 - leur contenu reste défilable ;
 - les champs et boutons restent accessibles.
 
-## 10. Résolution des problèmes
+## 11. Résolution des problèmes
 
 | Problème | Solution |
 |---|---|
@@ -169,7 +191,7 @@ le dossier de sécurité.
 | QR absent | Actualiser après le réveil éventuel du service Render |
 | Données anciennes | Cliquer sur **Rafraîchir** |
 
-## 11. Preuves à intégrer au PDF
+## 12. Preuves à intégrer au PDF
 
 - liste des liens et boutons de gestion ;
 - fenêtre de création et résultat avec QR ;
