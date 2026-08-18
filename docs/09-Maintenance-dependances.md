@@ -8,7 +8,8 @@ Le processus décrit ici précise les trois éléments exigés : le **périmètr
 logiciel concerné** (§ 1), la **fréquence** des vérifications (§ 2) et le **type
 de mise à jour**, automatique ou manuel (§ 3). Les paragraphes suivants
 détaillent l'évaluation d'impact (§ 4), le déroulement opératoire (§ 5) et deux
-cas réels traités dans le projet (§ 6 et § 7).
+cas réels traités dans le projet (§ 6 et § 7), avant la première revue
+Dependabot (§ 10) et les limites assumées (§ 11).
 
 ## 1. Périmètre logiciel concerné
 
@@ -210,15 +211,15 @@ chacune est une rupture de compatibilité qui doit être conduite comme une
 
 | Paquet | Installé | Majeure disponible | Impact anticipé | Priorité |
 |---|---|---|---|---|
-| `express` | 4.22.2 | 5.2.1 | Changement de la gestion des routes et des erreurs asynchrones ; touche `app.js`, tous les routeurs et le middleware d'erreur | moyenne |
+| `express` | 4.22.2 | 5.2.1 (PR #9) | Changement de la gestion des routes et des erreurs asynchrones ; touche `app.js`, tous les routeurs et le middleware d'erreur | moyenne |
 | `mongoose` | 8.24.3 | 9.9.3 | Modèle de connexion et options de requête ; touche les 2 modèles et 5 services | moyenne |
 | `react` / `react-dom` | 18.3.1 | 19.2.8 | Nouveau moteur de rendu ; touche l'interface d'administration | basse |
 | `zod` | 3.25.76 | 4.4.3 | Réécriture de l'API de schémas ; touche toute la validation d'entrée | moyenne |
 | `jest` | 29.7.0 | 30.4.2 | Configuration et environnement de test ; touche les 14 suites | basse |
-| `pino` | 9.14.0 | 10.3.1 | Format de sortie du journal ; touche la journalisation | basse |
-| `express-rate-limit` | 7.5.1 | 8.6.2 | Options de limitation ; touche 2 configurations | basse |
-| `dotenv` | 16.6.1 | 17.4.2 | Chargement de la configuration | basse |
-| `geoip-lite` | 1.2.2 | 2.0.3 | **Exige Node ≥ 24** — voir § 7 | conditionnée à l'abandon de Node 22 |
+| `pino` | 9.14.0 | 10.3.1 (PR #3) | Format de sortie du journal ; touche la journalisation | basse |
+| `express-rate-limit` | 7.5.1 | 8.6.2 (PR #7) | Options de limitation ; touche 2 configurations | basse |
+| `dotenv` | 16.6.1 | 17.4.2 (PR #8) | Chargement de la configuration | basse |
+| `geoip-lite` | 1.2.2 | 2.0.3 (PR #5) | **Exige Node ≥ 24** — voir § 7 | conditionnée à l'abandon de Node 22 |
 
 Priorisation retenue : d'abord ce qui porte la sécurité et l'accès aux données
 (`express`, `mongoose`, `zod`), ensuite l'outillage, enfin l'interface.
@@ -231,7 +232,62 @@ Priorisation retenue : d'abord ce qui porte la sécurité et l'accès aux donné
 | 18/08/2026 | `5a3a278` | `brace-expansion`, `js-yaml`, `mongoose`, `nanoid`, `postcss` | correctif | 89 tests, build, `npm audit` à 0, CI verte |
 | 18/08/2026 | voir § 7 | `helmet` 8.3.0, `vite` 8.2.1, pincement de `geoip-lite` à 1.2.2 | mineur + pincement | 89 tests, build, `npm ci`, `npm audit` à 0 |
 
-## 10. Limites du processus
+## 10. Première revue Dependabot — 18 août 2026
+
+La surveillance a produit ses premiers résultats dès sa mise en service : **8
+demandes de fusion** ont été ouvertes automatiquement. Leur traitement illustre
+les trois régimes du § 3.
+
+| Demande | Paquet | De → vers | Type | Régime | Décision |
+|---|---|---|---|---|---|
+| #2 | `actions/setup-node` | 6 → 7 | majeur | automatique surveillé | **à fusionner** — portée limitée à la CI, tous les contrôles verts |
+| #4 | `codecov/codecov-action` | 6 → 7 | majeur | automatique surveillé | **à fusionner** — idem |
+| #6 | `actions/checkout` | 6 → 7 | majeur | automatique surveillé | **à fusionner** — idem |
+| #5 | `geoip-lite` | 1.2.2 → 2.0.3 | majeur | manuel encadré | **à refuser** — exige Node ≥ 24 (voir § 7) |
+| #3 | `pino` | 9.14.0 → 10.3.1 | majeur | manuel encadré | **reportée** à la revue trimestrielle |
+| #7 | `express-rate-limit` | 7.5.1 → 8.6.2 | majeur | manuel encadré | **reportée** |
+| #8 | `dotenv` | 16.6.1 → 17.4.2 | majeur | manuel encadré | **reportée** |
+| #9 | `express` | 4.22.2 → 5.2.1 | majeur | manuel encadré | **reportée** — refonte du routage et des erreurs asynchrones |
+
+Aucune demande regroupée n'a été produite : au moment de la revue, toutes les
+montées mineures et correctives disponibles avaient déjà été appliquées
+manuellement (§ 7), si bien qu'il ne restait que des majeures — que le processus
+traite volontairement une par une.
+
+### Une intégration continue verte ne prouve pas la compatibilité d'environnement
+
+Constat marquant de cette revue : la demande #5 affiche **tous ses contrôles au
+vert**, y compris les tests sur Node 22.x, alors que `geoip-lite@2.0.3` déclare
+`engines: node >=24.0.0`. Explication : npm traite le champ `engines` comme un
+simple avertissement, sauf si l'option `engine-strict` est activée. Une
+incompatibilité d'environnement aurait donc pu être fusionnée sans qu'aucun
+contrôle ne s'y oppose, pour ne se manifester qu'à l'exécution.
+
+Garde-fou ajouté : un fichier `.npmrc` à la racine du projet contenant
+
+```
+engine-strict=true
+```
+
+Désormais, `npm ci` **échoue** — en intégration continue comme en local — si un
+paquet exige une version de Node.js incompatible avec celle utilisée.
+
+Vérification du mécanisme, réalisée en portant temporairement la contrainte du
+projet à une valeur impossible (`node >=99.0.0`) :
+
+```
+npm error code EBADENGINE
+npm error engine Unsupported engine
+npm error notsup Required: {"node":">=99.0.0"}
+npm error notsup Actual:   {"node":"v24.14.1","npm":"11.11.0"}
+```
+
+Avec la contrainte réelle (`>=22.12.0`), `npm ci` s'exécute normalement, et aucun
+des paquets installés n'exige Node ≥ 23 : le garde-fou n'introduit donc aucune
+régression. Sa conséquence attendue est que la demande #5 passera au **rouge**,
+ce qui matérialise dans l'outillage une décision jusqu'ici seulement documentée.
+
+## 11. Limites du processus
 
 1. **Pas d'auto-fusion** : chaque montée demande une action humaine. C'est un
    choix de sûreté pour un mainteneur unique, mais cela crée un délai dépendant
@@ -246,3 +302,6 @@ Priorisation retenue : d'abord ce qui porte la sécurité et l'accès aux donné
    chaîne, ils sont traités lors de la revue trimestrielle.
 5. **Les mises à jour des plateformes** (Render, Vercel, Atlas) sont subies ;
    seules leurs conséquences sont détectables, par la supervision.
+6. **La couverture de test ne détecte pas tout** : une incompatibilité
+   d'environnement n'apparaît pas nécessairement dans les 89 tests. C'est
+   `engine-strict` (§ 10), et non la suite de tests, qui protège de ce cas.
