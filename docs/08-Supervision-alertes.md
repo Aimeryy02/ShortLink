@@ -173,6 +173,7 @@ Fichier : `.github/workflows/supervision.yml`.
 |---|---|
 | Fréquence | toutes les 30 minutes (`cron: '*/30 * * * *'`), soit 48 exécutions par jour |
 | Déclenchement manuel | oui (`workflow_dispatch`), pour vérifier à la demande après un déploiement |
+| Mode exercice | oui (entrée `drill`), pour tester la chaîne d'alerte sans panne réelle |
 | Tolérance au démarrage à froid | 3 tentatives, délai de 75 s par appel, 10 s entre deux tentatives |
 | Hébergement | GitHub, donc **indépendant de Render et de Vercel** |
 | Coût | nul (dépôt public : minutes d'exécution illimitées) |
@@ -263,6 +264,22 @@ L'issue générée alimente directement le processus de consignation des anomali
 décrit dans `docs/10-Gestion-anomalies.md` : elle contient l'horodatage, le
 tableau des sondes, le lien vers l'exécution et un renvoi vers la procédure de
 réaction.
+
+### Test de la chaîne d'alerte (mode exercice)
+
+Une alerte jamais déclenchée est une alerte dont on ignore si elle fonctionne.
+Le workflow expose donc une entrée `drill` : lancé en mode exercice, il pointe
+volontairement la sonde de vivacité sur une route inexistante, ce qui déclenche
+toute la chaîne (échec du workflow → courriel → ouverture de l'issue) **sans
+provoquer ni simuler de panne en production**.
+
+L'issue créée en mode exercice porte un avertissement explicite en tête de corps
+(« EXERCICE DE TEST DE LA CHAINE D ALERTE — ce n'est pas un incident réel »)
+afin qu'elle ne soit jamais confondue avec un incident véritable. L'exécution
+verte suivante la clôt automatiquement.
+
+Procédure : GitHub → onglet *Actions* → *Supervision - sondes de production* →
+*Run workflow* → cocher l'entrée `drill`.
 
 ## 7. Procédure de réaction
 

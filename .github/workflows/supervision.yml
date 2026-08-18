@@ -12,6 +12,14 @@ on:
     # Toutes les 30 minutes (48 executions par jour).
     - cron: '*/30 * * * *'
   workflow_dispatch:
+    inputs:
+      drill:
+        description: >-
+          Exercice : pointer volontairement la sonde de vivacite sur une route
+          inexistante pour verifier de bout en bout la chaine d'alerte
+          (courriel + ouverture d'issue). N'affecte pas la production.
+        type: boolean
+        default: false
 
 concurrency:
   group: supervision
@@ -38,6 +46,8 @@ jobs:
     steps:
       - name: Executer les sondes
         id: probe
+        env:
+          DRILL: ${{ inputs.drill }}
         run: |
           : > results.md
           : > failures.txt
@@ -88,8 +98,18 @@ jobs:
           echo '| Sonde | Criticite | Attendu | Obtenu | Latence | Etat |' >> results.md
           echo '|---|---|---|---|---|---|' >> results.md
 
+          # Mode exercice : la sonde de vivacite est pointee sur une route
+          # inexistante afin de verifier que la chaine d'alerte fonctionne.
+          # La production n'est ni modifiee ni sollicitee anormalement.
+          health_path='/health'
+          if [ "${DRILL:-false}" = "true" ]; then
+            health_path='/health-exercice-de-test-alerte'
+            echo "EXERCICE : chaine d'alerte testee volontairement." > drill.txt
+            echo "::notice title=Exercice de test::La sonde de vivacite est volontairement pointee sur une route inexistante."
+          fi
+
           # Sonde 1 - vivacite du processus API (le service repond).
-          run_probe 'API /health (vivacite)' "$API_URL/health" '200' '"status":"alive"' 'critique' || true
+          run_probe 'API /health (vivacite)' "$API_URL$health_path" '200' '"status":"alive"' 'critique' || true
 
           # Sonde 2 - aptitude au service : verifie la connexion MongoDB Atlas
           # et la presence de la cle d'administration cote serveur.
@@ -144,7 +164,7 @@ jobs:
 
       - name: Ouvrir ou mettre a jour l incident
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -152,7 +172,15 @@ jobs:
 
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const title = 'Incident de supervision : sonde de production en echec';
+            const drill = read('drill.txt').trim();
             const body = [
+              ...(drill
+                ? [
+                    '> **EXERCICE DE TEST DE LA CHAINE D ALERTE — ce n est pas un incident reel.**',
+                    '> La sonde de vivacite a ete volontairement pointee sur une route inexistante.',
+                    '',
+                  ]
+                : []),
               '## Detection automatique',
               '',
               `- Detecte le : ${new Date().toISOString()}`,
@@ -201,7 +229,7 @@ jobs:
 
       - name: Clore l incident retabli
         if: success()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const title = 'Incident de supervision : sonde de production en echec';
