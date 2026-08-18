@@ -206,13 +206,14 @@ ce qui constitue l'historique de supervision consultable :
 
 ### 4.3 Sondes et signaux fournis par les plateformes
 
-| Source | Sonde / signal | Finalité |
-|---|---|---|
-| Render — *Health Check Path* réglé sur `/health/ready` | Sonde de plateforme sur chaque instance | Un déploiement dont la sonde d'aptitude échoue est refusé : une mauvaise configuration n'atteint pas la production |
-| Render — journaux et statut de déploiement | Événements `Live`, `Failed`, redémarrages | Corrélation d'un incident avec un déploiement |
-| Vercel — statut de déploiement | Succès/échec du build frontend | Détection d'une régression de build |
-| MongoDB Atlas — métriques et alertes du cluster | Connexions, opérations, stockage | Surveillance de la ressource externe |
-| GitHub Actions — `CI - Test & Build` | 70+ tests, build, `npm audit` | Barrière avant déploiement |
+| Source | Sonde / signal | Finalité | État |
+|---|---|---|---|
+| Render — *Health Check Path* réglé sur `/health/ready` | Sonde de plateforme sur chaque instance | Un déploiement dont la sonde d'aptitude échoue est refusé : une mauvaise configuration n'atteint pas la production | à activer (§ 10) |
+| Render — journaux et statut de déploiement | Événements `Live`, `Failed`, redémarrages | Corrélation d'un incident avec un déploiement | actif |
+| Render — notifications par courriel | Échec de déploiement, suspension | Alerte de plateforme | à activer (§ 10) |
+| Vercel — statut de déploiement | Succès/échec du build frontend | Détection d'une régression de build | actif |
+| MongoDB Atlas — métriques et alertes du cluster | Connexions, opérations, stockage | Surveillance de la ressource externe | à activer (§ 10) |
+| GitHub Actions — `CI - Test & Build` | 89 tests, build frontend, `npm audit` | Barrière avant déploiement | actif |
 
 ### 4.4 Journalisation, support de l'analyse
 
@@ -328,17 +329,62 @@ Trois scénarios exécutés contre le cluster MongoDB Atlas
 Le scénario 2 démontre l'intérêt de la séparation vivacité/aptitude : le
 processus reste vivant alors que le service n'est plus apte.
 
-### Vérification de la chaîne d'alerte
+### Vérification du chemin de détection
 
-Le workflow de supervision a été exécuté **avant** le déploiement des nouvelles
-sondes. Résultat conforme à l'attendu : les contrôles 1 et 2 sont passés en
-échec (`/health` répondait `200` mais sans le motif `"status":"alive"`, et
-`/health/ready` renvoyait `404`), le tableau de résultats a été produit, et le
-workflow s'est terminé en échec — ce qui déclenche la chaîne d'alerte.
+Le workflow de supervision a d'abord été exécuté **avant** le déploiement des
+nouvelles sondes. Résultat conforme à l'attendu : les contrôles 1 et 2 sont
+passés en échec (`/health` répondait `200` mais sans le motif `"status":"alive"`,
+et `/health/ready` renvoyait `404`), le tableau de résultats a été produit et le
+workflow s'est terminé en échec.
 
 Cette exécution vaut **test réel du chemin de détection** : elle prouve que la
 supervision détecte un écart entre le comportement attendu et le comportement
 observé en production, et qu'elle ne se contente pas de vérifier un code HTTP.
+Preuve : `perso/preuves/15-supervision-detection-ecart-C4.1.2.md`.
+
+### Vérification en production après déploiement
+
+Déploiement Render du 18 août 2026 (version 1.1.0) :
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| `GET /health` | `200`, `"status":"alive"`, `version: 1.1.0`, `environment: production` |
+| `GET /health/ready` | `200`, `"status":"ready"` |
+| Sous-sonde `mongodb` | `up`, latence **10 ms** |
+| Sous-sonde `admin_key` | `up`, `configured: true` (valeur non divulguée) |
+| Sous-sonde `memory` | `rssMb` 161 Mo sur une instance de 512 Mo |
+| En-tête de cache | `Cache-Control: no-store, max-age=0` |
+| Exécution du workflow de supervision | 4 contrôles verts en 12 s |
+
+### Vérification de la chaîne d'alerte (exercice du 18 août 2026)
+
+Un exercice a été mené en mode `drill` pour valider **tout le circuit de
+signalement**, et non seulement la détection :
+
+| Étape | Résultat observé |
+|---|---|
+| Détection | Sonde de vivacité en échec après 3 tentatives (`HTTP 404`), les 3 autres contrôles restant verts |
+| Terminaison du workflow | Échec → courriel automatique GitHub |
+| Ouverture de l'incident | Issue **#1** créée automatiquement par `github-actions`, étiquetée `incident` et `supervision`, avec horodatage, sonde en défaut, tableau complet des sondes et renvoi vers la procédure de réaction |
+| Retour à la normale | Exécution verte suivante : commentaire « Service rétabli » puis **fermeture automatique** de l'issue (`state_reason: completed`) |
+
+L'issue a donc été ouverte à `12:33:01Z` et refermée automatiquement à
+l'exécution suivante : le système date précisément le début et la fin de
+l'indisponibilité. Preuve : `perso/preuves/16-chaine-alerte-C4.1.2.md`.
+
+### Écart réel détecté sur la chaîne d'intégration continue
+
+La mise en place de la supervision a révélé un écart qui n'avait pas été vu :
+l'exécution de CI du commit `aea4aab` (24 juillet 2026) était **en échec**, le
+job `quality` ayant détecté une vulnérabilité `moderate` publiée après le dernier
+audit local de la journée. Au 18 août 2026, le compte était monté à
+**5 vulnérabilités** (3 hautes, 2 modérées) sans qu'une seule ligne de code ait
+changé.
+
+Correction appliquée le 18 août 2026 (commit `5a3a278`) : mise à jour de
+`brace-expansion`, `js-yaml`, `mongoose`, `nanoid` et `postcss`, retour à
+0 vulnérabilité et CI verte. Le processus de maintenance qui en découle est
+décrit dans `docs/09-Maintenance-dependances.md`.
 
 ## 9. Limites connues
 
