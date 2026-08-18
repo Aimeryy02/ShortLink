@@ -209,6 +209,10 @@ Voir l'état sur:
 # Tester l'API (route publique)
 curl https://shortlink-whkw.onrender.com/health
 
+# Vérifier que le service est réellement apte (MongoDB + configuration)
+# Attendu : HTTP 200 avec "status":"ready"
+curl -i https://shortlink-whkw.onrender.com/health/ready
+
 # La liste exige la clé d'administration
 curl -H "X-Admin-Key: <clé>" https://shortlink-whkw.onrender.com/api/links
 

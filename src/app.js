@@ -6,6 +6,7 @@ const { createCorsOptions } = require('./config/cors');
 const rateLimiter = require('./config/rateLimit');
 const redirectRateLimiter = require('./config/redirectRateLimit');
 const routes = require('./routes');
+const healthRoutes = require('./routes/healthRoutes');
 const redirectRoutes = require('./routes/redirectRoutes');
 const notFoundMiddleware = require('./middlewares/notFoundMiddleware');
 const errorMiddleware = require('./middlewares/errorMiddleware');
@@ -31,17 +32,13 @@ app.get('/', (req, res) => {
     service: 'ShortLink API',
     endpoints: {
       health: '/health',
+      readiness: '/health/ready',
       links: '/api/links',
     },
   });
 });
 
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    status: 'healthy',
-  });
-});
+app.use('/health', healthRoutes);
 
 app.use('/api', rateLimiter);
 app.use(routes);

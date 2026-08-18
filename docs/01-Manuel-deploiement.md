@@ -291,12 +291,19 @@ Vercel Dashboard → Deployments → Function Logs
 ### Accès
 
 ```bash
-# Render API
+# Render API — sonde de vivacité (le processus répond)
 curl https://shortlink-whkw.onrender.com/health
+
+# Render API — sonde d'aptitude au service (connexion MongoDB + configuration)
+# 200 = apte, 503 = dégradé, avec le détail de la sonde en défaut
+curl -i https://shortlink-whkw.onrender.com/health/ready
 
 # MongoDB Stats
 Dans Atlas Dashboard → Metrics
 ```
+
+Le système de supervision complet (sondes, indicateurs, seuils, alertes et
+procédure de réaction) est décrit dans `docs/08-Supervision-alertes.md`.
 
 ---
 
@@ -345,6 +352,8 @@ git push
 ### Checklist
 
 - [x] API répond à `GET /health` (route publique)
+- [x] `GET /health/ready` renvoie `200` et `"status":"ready"` (base joignable et
+      clé d'administration configurée côté serveur)
 - [x] `GET /api/links` renvoie `401` sans clé et `200` avec la clé valide
 - [x] Frontend charge à `https://short-link-omega.vercel.app`
 - [x] Créer un lien test

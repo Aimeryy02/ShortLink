@@ -68,7 +68,7 @@ RGAA 4.1.2 reste le référentiel en vigueur à la date du présent contrôle.
 | A06 — Insecure Design | Séparation public/administration, modèle de menaces, collisions contrôlées, liens expirés/désactivés bloqués et états non mis en cache. | routes, services et `redirectController.js` |
 | A07 — Authentication Failures | Clé requise, longueur serveur minimale, message 401 générique, clé jamais journalisée, conservation limitée à `sessionStorage`, bouton de déconnexion. | middleware et écran « Accès administrateur » |
 | A08 — Software or Data Integrity Failures | Git, historique de commits, CI bloquante, lockfile, builds Vite reproductibles et déploiements issus de `main`. | GitHub Actions, `package-lock.json` |
-| A09 — Security Logging and Alerting Failures | Pino journalise les erreurs et les refus d'accès sans inclure le secret. Render centralise les journaux. Les notifications opérationnelles Render restent à capturer/configurer. | `logger.js`, middleware d'erreur, logs Render |
+| A09 — Security Logging and Alerting Failures | Pino journalise les erreurs et les refus d'accès sans inclure le secret. Render centralise les journaux. Un système de supervision interroge la production toutes les 30 minutes et ouvre automatiquement une issue d'incident en cas d'échec d'une sonde critique. | `logger.js`, middleware d'erreur, logs Render, `.github/workflows/supervision.yml`, `docs/08-Supervision-alertes.md` |
 | A10 — Mishandling of Exceptional Conditions | Middleware d'erreur centralisé, validation des erreurs attendues, 503 si le secret serveur est absent/faible, suivi analytics non bloquant et route 404 contrôlée. | `errorMiddleware.js`, `adminAuthMiddleware.js`, tests Jest |
 
 ### Limites annoncées
@@ -77,8 +77,10 @@ RGAA 4.1.2 reste le référentiel en vigueur à la date du présent contrôle.
   des comptes nominatifs, des rôles et une traçabilité par utilisateur ;
 - le hash d'IP est une pseudonymisation, pas une anonymisation irréversible ;
 - le Top 10 ne remplace pas un audit ASVS ou un test d'intrusion ;
-- les alertes opérationnelles doivent être configurées dans Render pour
-  compléter la journalisation.
+- la journalisation est consultée à la demande dans Render : elle n'est pas
+  exportée vers un agrégateur externe et n'est pas conservée au-delà de la
+  rétention de la plateforme. Les alertes de disponibilité, elles, sont
+  automatisées (voir `docs/08-Supervision-alertes.md`).
 
 ## 4. Contrôle d'accès administrateur
 
@@ -101,6 +103,7 @@ Ajouter la valeur obtenue :
 | Scénario | Résultat |
 |---|---|
 | `GET /health` sans clé | `200` |
+| `GET /health/ready` sans clé | `200` si apte, `503` si dégradé, sans divulguer la clé |
 | redirection `GET /:code` sans clé | publique |
 | `GET /api/qr/:code` sans clé | publique |
 | `GET /api/links` sans clé | `401` |
@@ -213,6 +216,11 @@ Vérifications du 24 juillet 2026 (preuves dans `perso/preuves/`) :
 - navigation clavier vérifiée par parcours E2E (Puppeteer) : focus piégé dans
   les modales, **restauré au déclencheur** après `Échap`, focus visible.
 
-Réserve : les deux correctifs d'accessibilité (contraste, restauration du focus)
-doivent être **redéployés** sur Vercel pour que la production affiche 100/100 ;
-les notifications opérationnelles Render restent à configurer.
+Les correctifs d'accessibilité (contraste, restauration du focus, ordre des
+titres) ont été **déployés et vérifiés en production** : Lighthouse Accessibility
+affiche 100/100 sur la page publique comme sur le tableau de bord.
+
+Réserve restante : les notifications opérationnelles Render et les alertes de
+cluster MongoDB Atlas doivent être activées dans les consoles des plateformes
+(procédure au § 10 de `docs/08-Supervision-alertes.md`) ; la supervision
+automatisée par sondes, elle, est en place et vérifiée.

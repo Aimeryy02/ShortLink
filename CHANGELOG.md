@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-18
+
+### Added
+- Sonde de vivacité `GET /health` : état du processus, version, uptime
+- Sonde d'aptitude au service `GET /health/ready` : vérifie par un `ping` effectif
+  la connexion MongoDB, la présence de la clé d'administration côté serveur et la
+  mémoire du processus (`200` si apte, `503` si dégradé)
+- Workflow de supervision `.github/workflows/supervision.yml` : 4 contrôles de
+  production toutes les 30 minutes, ouverture et clôture automatiques d'une issue
+  d'incident
+- Documentation du système de supervision et d'alerte
+  (`docs/08-Supervision-alertes.md`)
+
+### Changed
+- En-tête `Cache-Control: no-store` sur les points d'entrée de supervision
+- Version du paquet alignée sur le journal des versions (1.0.0 → 1.1.0)
+
+### Testing
+- 89 tests unitaires (14 suites) dont 19 dédiés aux sondes de supervision —
+  couverture 93,05 % des instructions
+
 ## [1.0.1] - 2026-07-24
 
 ### Added

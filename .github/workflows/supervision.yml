@@ -1,0 +1,230 @@
+name: Supervision - sondes de production
+
+# Systeme de supervision de ShortLink (competence C4.1.2).
+# Perimetre supervise : API Render, base MongoDB Atlas (via la sonde de
+# readiness) et frontend Vercel.
+# Modalite de signalement : echec du workflow -> courriel GitHub au proprietaire
+# du depot + ouverture automatique d'une issue etiquetee "incident".
+# Documentation : docs/08-Supervision-alertes.md
+
+on:
+  schedule:
+    # Toutes les 30 minutes (48 executions par jour).
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: supervision
+  cancel-in-progress: false
+
+env:
+  API_URL: https://shortlink-whkw.onrender.com
+  APP_URL: https://short-link-omega.vercel.app
+  # Budget de latence de l'API une fois le service reveille (ms).
+  LATENCY_BUDGET_MS: '3000'
+  # Nombre de tentatives : absorbe le demarrage a froid de l'offre Render
+  # gratuite (mesure : jusqu'a 25 s apres mise en veille).
+  MAX_ATTEMPTS: '3'
+  CURL_TIMEOUT: '75'
+
+jobs:
+  probe:
+    name: Sondes de disponibilite
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Executer les sondes
+        id: probe
+        run: |
+          : > results.md
+          : > failures.txt
+          : > warnings.txt
+
+          run_probe() {
+            probe_name="$1"
+            probe_url="$2"
+            expected_code="$3"
+            expected_pattern="$4"
+            criticality="$5"
+
+            http_code="000"
+            latency_ms="0"
+            status="KO"
+
+            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+              start_ms=$(date +%s%3N)
+              http_code=$(curl -sS -o probe-body.txt -w '%{http_code}' \
+                --max-time "$CURL_TIMEOUT" "$probe_url" 2>/dev/null || echo "000")
+              end_ms=$(date +%s%3N)
+              latency_ms=$(( end_ms - start_ms ))
+
+              if [ "$http_code" = "$expected_code" ] \
+                 && grep -q "$expected_pattern" probe-body.txt; then
+                status="OK"
+                break
+              fi
+
+              echo "Tentative $attempt/$MAX_ATTEMPTS echouee pour $probe_name (HTTP $http_code)"
+              [ "$attempt" -lt "$MAX_ATTEMPTS" ] && sleep 10
+            done
+
+            printf '| %s | %s | %s | %s | %s ms | %s |\n' \
+              "$probe_name" "$criticality" "$expected_code" "$http_code" \
+              "$latency_ms" "$status" >> results.md
+
+            if [ "$status" = "KO" ]; then
+              printf -- '- **%s** : attendu HTTP %s + motif `%s`, obtenu HTTP %s (%s tentatives)\n' \
+                "$probe_name" "$expected_code" "$expected_pattern" "$http_code" \
+                "$MAX_ATTEMPTS" >> failures.txt
+              return 1
+            fi
+
+            return 0
+          }
+
+          echo '| Sonde | Criticite | Attendu | Obtenu | Latence | Etat |' >> results.md
+          echo '|---|---|---|---|---|---|' >> results.md
+
+          # Sonde 1 - vivacite du processus API (le service repond).
+          run_probe 'API /health (vivacite)' "$API_URL/health" '200' '"status":"alive"' 'critique' || true
+
+          # Sonde 2 - aptitude au service : verifie la connexion MongoDB Atlas
+          # et la presence de la cle d'administration cote serveur.
+          run_probe 'API /health/ready (MongoDB + configuration)' "$API_URL/health/ready" '200' '"status":"ready"' 'critique' || true
+
+          # Sonde 3 - disponibilite du frontend Vercel.
+          run_probe 'Frontend Vercel' "$APP_URL" '200' 'ShortLink' 'critique' || true
+
+          # Sonde 4 - performance a chaud : mesure la latence hors demarrage
+          # a froid, comparee au budget de latence.
+          warm_start=$(date +%s%3N)
+          warm_code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time "$CURL_TIMEOUT" \
+            "$API_URL/health/ready" 2>/dev/null || echo "000")
+          warm_end=$(date +%s%3N)
+          warm_ms=$(( warm_end - warm_start ))
+
+          printf '| API /health/ready (latence a chaud) | performance | < %s ms | %s ms | %s ms | %s |\n' \
+            "$LATENCY_BUDGET_MS" "$warm_ms" "$warm_ms" \
+            "$( [ "$warm_ms" -le "$LATENCY_BUDGET_MS" ] && echo OK || echo 'A SURVEILLER' )" >> results.md
+
+          if [ "$warm_ms" -gt "$LATENCY_BUDGET_MS" ]; then
+            echo "::warning title=Budget de latence depasse::/health/ready a repondu en ${warm_ms} ms (budget ${LATENCY_BUDGET_MS} ms)"
+            printf -- '- Latence a chaud de `/health/ready` : %s ms (budget %s ms)\n' \
+              "$warm_ms" "$LATENCY_BUDGET_MS" >> warnings.txt
+          fi
+
+          {
+            echo "## Supervision ShortLink"
+            echo ""
+            echo "Execution : \`$GITHUB_RUN_ID\` — declencheur : \`$GITHUB_EVENT_NAME\`"
+            echo ""
+            cat results.md
+            if [ -s warnings.txt ]; then
+              echo ""
+              echo "### Avertissements de performance (non bloquants)"
+              cat warnings.txt
+            fi
+            if [ -s failures.txt ]; then
+              echo ""
+              echo "### Sondes critiques en echec"
+              cat failures.txt
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -s failures.txt ]; then
+            echo "Au moins une sonde critique est en echec."
+            cat failures.txt
+            exit 1
+          fi
+
+          echo "Toutes les sondes critiques sont vertes."
+
+      - name: Ouvrir ou mettre a jour l incident
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const read = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '');
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const title = 'Incident de supervision : sonde de production en echec';
+            const body = [
+              '## Detection automatique',
+              '',
+              `- Detecte le : ${new Date().toISOString()}`,
+              `- Declencheur : \`${context.eventName}\``,
+              `- Execution de supervision : ${runUrl}`,
+              '',
+              '## Sondes critiques en echec',
+              '',
+              read('failures.txt').trim() || '_non renseigne_',
+              '',
+              '## Etat detaille des sondes',
+              '',
+              read('results.md').trim(),
+              '',
+              '## Procedure de traitement',
+              '',
+              'Voir `docs/08-Supervision-alertes.md`, section « Procedure de reaction ».',
+            ].join('\n');
+
+            const { data: open } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: 'open',
+              labels: 'supervision',
+              per_page: 20,
+            });
+
+            const existing = open.find((issue) => issue.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: existing.number,
+                body: `L'incident est toujours en cours.\n\n${body}`,
+              });
+              core.notice(`Incident #${existing.number} mis a jour.`);
+              return;
+            }
+
+            const created = await github.rest.issues.create({
+              ...context.repo,
+              title,
+              body,
+              labels: ['incident', 'supervision'],
+            });
+            core.notice(`Incident #${created.data.number} ouvert.`);
+
+      - name: Clore l incident retabli
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Incident de supervision : sonde de production en echec';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const { data: open } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: 'open',
+              labels: 'supervision',
+              per_page: 20,
+            });
+
+            for (const issue of open.filter((item) => item.title === title)) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: issue.number,
+                body: `Service retabli : toutes les sondes critiques sont vertes.\n\nExecution de verification : ${runUrl}`,
+              });
+              await github.rest.issues.update({
+                ...context.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+              core.notice(`Incident #${issue.number} clos apres retablissement.`);
+            }
