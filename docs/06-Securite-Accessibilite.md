@@ -1,6 +1,6 @@
 # Sécurité OWASP et accessibilité — ShortLink
 
-Date de mise à jour : 24 juillet 2026
+Date de mise à jour : 24 juillet 2026 — révision du 18 août 2026 (supervision et dépendances)
 
 Environnements concernés :
 
@@ -62,7 +62,7 @@ RGAA 4.1.2 reste le référentiel en vigueur à la date du présent contrôle.
 |---|---|---|
 | A01 — Broken Access Control | Les routes de création, liste, détail, modification, suppression et statistiques exigent `X-Admin-Key`. Les redirections et QR restent volontairement publics. | `adminAuthMiddleware.js`, `linkRoutes.js`, `statsRoutes.js` |
 | A02 — Security Misconfiguration | Helmet, CORS limité, `trust proxy` en production, corps HTTP limité à 20 Ko, erreurs 500 génériques, limites API et redirections. | `app.js`, `cors.js`, `rateLimit.js`, `redirectRateLimit.js` |
-| A03 — Software Supply Chain Failures | `package-lock.json`, installation reproductible, CI Node 22/24, audit npm et mises à jour contrôlées. L'audit du 24/07/2026 retourne 0 vulnérabilité connue. | `package-lock.json`, `.github/workflows/ci.yml`, sortie `npm audit` |
+| A03 — Software Supply Chain Failures | `package-lock.json`, installation reproductible, CI Node 22/24, audit npm et mises à jour contrôlées. Surveillance automatisée des versions par Dependabot (hebdomadaire) et audit planifié chaque lundi, en plus de l'audit à chaque push. L'audit du 18/08/2026 retourne 0 vulnérabilité connue après correction de 5 avis. | `package-lock.json`, `.github/workflows/ci.yml`, `.github/dependabot.yml`, `docs/09-Maintenance-dependances.md`, sortie `npm audit` |
 | A04 — Cryptographic Failures | HTTPS Render/Vercel, secret d'au moins 32 caractères, comparaison à temps constant après SHA-256, `.env` ignoré. Les IP sont pseudonymisées avant stockage. | `adminAuthMiddleware.js`, `analyticsService.js`, `.gitignore` |
 | A05 — Injection | Schémas Zod, protocoles HTTP/HTTPS uniquement, alias borné, recherche limitée à 100 caractères et métacaractères de regex échappés. Aucun `eval`. | `linkValidation.js`, `linkService.js` |
 | A06 — Insecure Design | Séparation public/administration, modèle de menaces, collisions contrôlées, liens expirés/désactivés bloqués et états non mis en cache. | routes, services et `redirectController.js` |
@@ -172,8 +172,8 @@ rapport automatisé.
 
 Résultats du 24 juillet 2026 :
 
-- 12 suites Jest réussies ;
-- 70 tests réussis ;
+- 14 suites Jest réussies ;
+- 89 tests réussis ;
 - couverture : 91,98 % statements, 80 % branches, 98 % fonctions,
   93,43 % lignes ;
 - build frontend Vite 8.1.5 réussi ;

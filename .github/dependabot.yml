@@ -1,0 +1,52 @@
+# Surveillance automatisee des nouvelles versions (competence C4.1.1).
+# Processus complet documente dans docs/09-Maintenance-dependances.md
+version: 2
+
+updates:
+  # --- Dependances applicatives npm ---
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    labels:
+      - dependances
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: scope
+    # Les montees mineures et de correctif sont regroupees en une seule
+    # demande de fusion par perimetre : elles sont a faible risque et se
+    # verifient d'un seul coup par la CI.
+    groups:
+      production-mineur-et-correctif:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      developpement-mineur-et-correctif:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+    # Les montees majeures ne sont volontairement pas regroupees : chacune
+    # recoit sa propre demande de fusion afin d'etre evaluee individuellement
+    # (rupture de compatibilite, effort de migration).
+
+  # --- Actions GitHub utilisees par les workflows ---
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+      timezone: Europe/Paris
+    open-pull-requests-limit: 3
+    labels:
+      - dependances
+      - ci
+    commit-message:
+      prefix: "chore(ci)"
+      include: scope

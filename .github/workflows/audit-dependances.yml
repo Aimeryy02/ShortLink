@@ -1,0 +1,171 @@
+name: Audit hebdomadaire des dependances
+
+# Comble une faille de couverture identifiee le 18/08/2026 : le job "quality"
+# de la CI ne s'execute qu'au push. Une vulnerabilite publiee alors qu'aucune
+# ligne de code ne change n'etait donc signalee par personne.
+# Competence C4.1.1 — voir docs/09-Maintenance-dependances.md
+
+on:
+  schedule:
+    # Chaque lundi a 06:00 UTC, avant l'ouverture des demandes Dependabot (07:00
+    # heure de Paris) : l'etat de l'existant est connu avant l'arrivee des
+    # propositions de montee de version.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Vulnerabilites et versions disponibles
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Auditer les vulnerabilites et relever les versions disponibles
+        id: audit
+        run: |
+          # GitHub Actions execute bash avec -e : le "|| audit_status=$?"
+          # est indispensable pour capturer le code de sortie sans interrompre
+          # l'etape des qu'une vulnerabilite est trouvee.
+          audit_status=0
+          npm audit --audit-level=moderate > audit.txt 2>&1 || audit_status=$?
+
+          npm audit --json > audit.json 2>/dev/null || true
+          counts=$(node -e 'const v = JSON.parse(require("fs").readFileSync("audit.json", "utf8")).metadata.vulnerabilities; console.log("critique=" + v.critical + " haute=" + v.high + " moderee=" + v.moderate + " faible=" + v.low);' 2>/dev/null || echo 'comptage indisponible')
+
+          # npm outdated sort en code 1 des qu'une version plus recente existe :
+          # ce n'est pas une erreur, seulement une information.
+          npm outdated > outdated.txt 2>&1 || true
+
+          {
+            echo "## Audit des dependances ShortLink"
+            echo ""
+            echo "Comptage : \`$counts\`"
+            echo ""
+            echo "### Vulnerabilites (seuil : moderate)"
+            echo ""
+            echo '```'
+            cat audit.txt
+            echo '```'
+            echo ""
+            echo "### Versions plus recentes disponibles"
+            echo ""
+            echo '```'
+            cat outdated.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          {
+            echo "status=$audit_status"
+            echo "counts=$counts"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$audit_status" -ne 0 ]; then
+            echo "Des vulnerabilites de niveau moderate ou superieur sont presentes."
+            exit 1
+          fi
+
+          echo "Aucune vulnerabilite de niveau moderate ou superieur."
+
+      - name: Ouvrir ou mettre a jour le signalement de vulnerabilite
+        if: failure()
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const read = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '');
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const title = 'Vulnerabilites de dependances detectees par l audit hebdomadaire';
+            const body = [
+              '## Detection automatique',
+              '',
+              `- Detecte le : ${new Date().toISOString()}`,
+              `- Comptage : \`${{ steps.audit.outputs.counts }}\``,
+              `- Execution : ${runUrl}`,
+              '',
+              '## Rapport npm audit',
+              '',
+              '```',
+              read('audit.txt').trim(),
+              '```',
+              '',
+              '## Versions plus recentes disponibles',
+              '',
+              '```',
+              read('outdated.txt').trim(),
+              '```',
+              '',
+              '## Procedure de traitement',
+              '',
+              'Voir `docs/09-Maintenance-dependances.md`, section « Processus de mise a jour ».',
+            ].join('\n');
+
+            const { data: open } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: 'open',
+              labels: 'dependances',
+              per_page: 20,
+            });
+
+            const existing = open.find((issue) => issue.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: existing.number,
+                body: `Les vulnerabilites sont toujours presentes.\n\n${body}`,
+              });
+              core.notice(`Signalement #${existing.number} mis a jour.`);
+              return;
+            }
+
+            const created = await github.rest.issues.create({
+              ...context.repo,
+              title,
+              body,
+              labels: ['dependances', 'securite'],
+            });
+            core.notice(`Signalement #${created.data.number} ouvert.`);
+
+      - name: Clore le signalement resolu
+        if: success()
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = 'Vulnerabilites de dependances detectees par l audit hebdomadaire';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const { data: open } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: 'open',
+              labels: 'dependances',
+              per_page: 20,
+            });
+
+            for (const issue of open.filter((item) => item.title === title)) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: issue.number,
+                body: `Resolu : npm audit ne remonte plus de vulnerabilite de niveau moderate ou superieur.\n\nExecution de verification : ${runUrl}`,
+              });
+              await github.rest.issues.update({
+                ...context.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+              core.notice(`Signalement #${issue.number} clos.`);
+            }

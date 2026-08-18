@@ -188,7 +188,7 @@ npm start              # Démarrer le serveur
 
 ```
 ✅ 12 test suites passed
-✅ 70 tests passed
+✅ 89 tests passed
 ✅ 91.98% statement coverage
 ✅ 80% branch coverage
 ✅ 98% function coverage
@@ -262,7 +262,7 @@ Pour une validation **point par point détaillée** avec justifications, voir: *
 ### Résumé des Livrables
 
 ```
-✅ Tests: 70 tests, 91.98% couverture des instructions
+✅ Tests: 89 tests, 93,05 % couverture des instructions
 ✅ Sécurité: 10 catégories OWASP 2025 couvertes, npm audit 0, auth admin vérifiée en production (401/200)
 ⏳ Accessibilité: RGAA 4.1.2, Lighthouse 94 → 100 après correction du contraste, redéploiement pour la prod
 ✅ Documentation: 3 manuels (docs/) + README, choix technologiques décrits

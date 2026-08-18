@@ -30,13 +30,20 @@ git status
 npm install
 ```
 
+Pour une installation strictement reproductible depuis le lockfile — ce que fait
+l'intégration continue — utiliser `npm ci`.
+
+Le processus de mise à jour des dépendances (fréquence, périmètre, régimes
+automatique et manuel, grille d'évaluation d'impact) est décrit dans
+`docs/09-Maintenance-dependances.md`.
+
 ### Vérifier les tests passent
 
 ```bash
 npm test
 ```
 
-Tous les 70 tests doivent passer (aucune erreur).
+Tous les 89 tests doivent passer (aucune erreur).
 
 ---
 
@@ -146,7 +153,7 @@ Le pipeline CI/CD démarre automatiquement:
 
 ```
 ✅ Installer les dépendances
-✅ Lancer les tests (70 tests)
+✅ Lancer les tests (89 tests)
 ✅ Vérifier la couverture (seuil bloquant 70 %, mesurée ~92 %)
 ✅ Construire le frontend
 ✅ Audit de sécurité (npm audit)

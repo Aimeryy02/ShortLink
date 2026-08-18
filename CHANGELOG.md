@@ -17,10 +17,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   d'incident
 - Documentation du système de supervision et d'alerte
   (`docs/08-Supervision-alertes.md`)
+- Surveillance automatisée des dépendances : `.github/dependabot.yml` (npm
+  hebdomadaire, actions GitHub mensuelles) et audit hebdomadaire planifié
+  `.github/workflows/audit-dependances.yml` qui ouvre puis clôt un signalement
+- Documentation du processus de mise à jour des dépendances
+  (`docs/09-Maintenance-dependances.md`)
 
 ### Changed
 - En-tête `Cache-Control: no-store` sur les points d'entrée de supervision
 - Version du paquet alignée sur le journal des versions (1.0.0 → 1.1.0)
+- `helmet` 8.2.0 → 8.3.0 et `vite` 8.1.5 → 8.2.1 (montées mineures dans les
+  plages déclarées)
+
+### Security
+- Correction de 5 vulnérabilités relevées par `npm audit` : `brace-expansion`,
+  `js-yaml`, `mongoose`, `nanoid`, `postcss` (montées de correctif)
+- `geoip-lite` **pincé** à la version exacte 1.2.2 : la plage `^1.2.2` laissait
+  remonter la 1.4.10, qui réintroduit une vulnérabilité haute via `ip-address`.
+  La branche 2.x qui la corrige exige Node ≥ 24 et ferait tomber le support de
+  Node 22 — décision reportée et documentée
 
 ### Testing
 - 89 tests unitaires (14 suites) dont 19 dédiés aux sondes de supervision —
