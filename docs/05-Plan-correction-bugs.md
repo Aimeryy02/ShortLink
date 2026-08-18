@@ -235,6 +235,11 @@ parcours E2E navigateur.
 
 ## Processus de Correction
 
+> Ce paragraphe décrit le traitement des bogues **pendant la phase de
+> développement et de recette**. Le dispositif permanent d'exploitation —
+> canaux de collecte, outil et gabarit de consignation, grille de gravité et
+> cycle de vie d'une anomalie — est décrit dans `docs/10-Gestion-anomalies.md`.
+
 ### 1. Identification
 
 - Tests automatisés découvrent les régressions
