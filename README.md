@@ -249,11 +249,22 @@ reproductibles.**
 | **C2.1.2** | Intégration continue (CI/CD) | [.github/workflows/ci.yml](.github/workflows/ci.yml) | ✅ |
 | **C2.2.1** | Prototype fonctionnel, ergonomique et sécurisé | [Architecture](#-architecture), clé d'administration | ✅ |
 | **C2.2.2** | Tests unitaires (seuil 70 %) | [test:coverage](#-tests--couverture) - **91.98%** | ✅ |
-| **C2.2.3** | Sécurité OWASP + accessibilité RGAA | Auth prod vérifiée (401/200), npm audit 0, Lighthouse 100 après correction | ⏳ redéploiement |
-| **C2.2.4** | Versions, déploiement progressif | [CHANGELOG.md](CHANGELOG.md) - tags **v1.0.0 / v1.0.1** | ✅ |
-| **C2.3.1** | Cahier de recettes | [04-Cahier-recettes.md](docs/04-Cahier-recettes.md) - **24 recettes exécutées** | ⏳ redéploiement |
+| **C2.2.3** | Sécurité OWASP + accessibilité RGAA | Auth prod vérifiée (401/200), npm audit 0, Lighthouse Accessibility **100/100 en production** | ✅ |
+| **C2.2.4** | Versions, déploiement progressif | [CHANGELOG.md](CHANGELOG.md) - tags **v1.0.0 → v1.1.0** | ✅ |
+| **C2.3.1** | Cahier de recettes | [04-Cahier-recettes.md](docs/04-Cahier-recettes.md) - **24 recettes exécutées** | ✅ |
 | **C2.3.2** | Plan de correction des bogues | [05-Plan-correction-bugs.md](docs/05-Plan-correction-bugs.md) - **7 corrigés, tracés** | ✅ |
 | **C2.4.1** | Documentation d'exploitation (3 manuels) | [01](docs/01-Manuel-deploiement.md) · [02](docs/02-Manuel-utilisation.md) · [03](docs/03-Manuel-mise-a-jour.md) | ✅ |
+
+### Bloc 4 — Maintien en condition opérationnelle
+
+| Critère | Intitulé | Preuve | Statut |
+|---------|----------|--------|--------|
+| **C4.1.1** | Mises à jour des dépendances | [09-Maintenance-dependances.md](docs/09-Maintenance-dependances.md) · [dependabot.yml](.github/dependabot.yml) · [audit-dependances.yml](.github/workflows/audit-dependances.yml) | ✅ |
+| **C4.1.2** | Supervision et alertes | [08-Supervision-alertes.md](docs/08-Supervision-alertes.md) · [supervision.yml](.github/workflows/supervision.yml) · `GET /health`, `GET /health/ready` | ✅ |
+| **C4.2.1** | Consignation des anomalies | [10-Gestion-anomalies.md](docs/10-Gestion-anomalies.md) · [gabarit d'anomalie](.github/ISSUE_TEMPLATE/anomalie.yml) | ✅ |
+| **C4.2.2** | Correctif déployé par la CI/CD | [11-Traitement-anomalie.md](docs/11-Traitement-anomalie.md) | ✅ |
+| **C4.3.1** | Axes d'amélioration | [12-Axes-amelioration.md](docs/12-Axes-amelioration.md) | ✅ |
+| **C4.3.2** | Journal des versions | [CHANGELOG.md](CHANGELOG.md) · [13-Journal-versions.md](docs/13-Journal-versions.md) | ✅ |
 
 ### Audit Complet
 
@@ -262,12 +273,13 @@ Pour une validation **point par point détaillée** avec justifications, voir: *
 ### Résumé des Livrables
 
 ```
-✅ Tests: 89 tests, 93,05 % couverture des instructions
+✅ Tests: 89 tests (14 suites), 93,05 % couverture des instructions
 ✅ Sécurité: 10 catégories OWASP 2025 couvertes, npm audit 0, auth admin vérifiée en production (401/200)
-⏳ Accessibilité: RGAA 4.1.2, Lighthouse 94 → 100 après correction du contraste, redéploiement pour la prod
-✅ Documentation: 3 manuels (docs/) + README, choix technologiques décrits
-✅ CI/CD: GitHub Actions automatisé
-✅ Versioning: CHANGELOG + tags v1.0.0 / v1.0.1
+✅ Accessibilité: RGAA 4.1.2, Lighthouse Accessibility 100/100 en production (page publique et tableau de bord)
+✅ Performance: Lighthouse Performance 98/100 en production, 53 KiB transférés
+✅ Documentation: 6 manuels d'exploitation (docs/01 à 13) + README
+✅ CI/CD: GitHub Actions automatisé, supervision de production toutes les 30 min
+✅ Versioning: CHANGELOG + tags v1.0.0, v1.0.1, v1.0.2, v1.1.0
 ```
 
 ---
