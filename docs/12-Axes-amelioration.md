@@ -232,8 +232,34 @@ développement disparaissent. Durée de construction inchangée (1,3 s).
 | Coût | 6 lignes de configuration, **aucune dépendance ajoutée** |
 | Délai | 15 minutes, vérification comprise |
 | Gain | **Aucun gain de performance en production** — elle est déjà correcte. Le gain est d'intégrité : ce qui est testé devient ce qui est livré |
-| Risque | Faible. La construction locale passe en mode production, où certains avertissements de développement disparaissent. À valider par la suite de tests et un parcours manuel |
+| Risque | Faible, sous une condition : `define` s'applique **aussi au serveur de développement**. Appliqué sans condition, ce réglage priverait le développeur des avertissements de React. La configuration doit donc distinguer `serve` de `build` |
 | Priorité | **3** |
+| État | **Correctif implémenté** sur une branche dédiée, en attente de fusion. Mesures de la mise en œuvre ci-dessous |
+
+#### Résultat de la mise en œuvre
+
+La configuration a été convertie en fonction, pour n'appliquer le réglage qu'à la
+construction. Vérifié : en mode `serve`, ni `define` ni `esbuild` ne sont
+transmis ; en mode `build`, les deux le sont.
+
+| Mesure | Avant | Après |
+|---|---|---|
+| Bundle construit localement | 329 570 o | **153 770 o** |
+| `jsxDEV` dans le bundle local | 88 | **0** |
+| `validateDOMNesting` | 3 | **0** |
+| Bundle servi en production | 153 784 o | inchangé |
+
+Il subsiste **14 octets** d'écart avec la production, et cet écart est légitime :
+il provient de la variable d'environnement `VITE_API_BASE_URL`, définie sur Vercel
+et absente en local. Elle agit à deux endroits — directement, et par son repli
+`client/src/main.jsx:278` (`API_BASE_URL || 'http://localhost:3000'`). Après
+neutralisation de cette variable, les deux constructions ne diffèrent plus que par
+ce repli.
+
+Corollaire utile pour la conséquence n° 2 énoncée plus haut : un `dist/` construit
+localement n'est de toute façon **pas déployable**, puisqu'il pointe vers
+`localhost`. Le risque n'était donc pas de livrer un bundle discrètement plus
+lourd, mais de livrer un frontend inopérant.
 
 Cette recommandation illustre une distinction utile : un indicateur au vert en
 production ne garantit pas que la chaîne qui y mène soit saine.
@@ -390,7 +416,7 @@ irréaliste au regard du projet décrédibiliserait tout le plan.
 |---|---|---|
 | R1 | Temps de réponse du premier appel après 20 min d'inactivité | < 1 s |
 | R2 | Part des commits de `main` issus d'une demande de fusion avec CI verte | 100 % |
-| R3 | Écart de taille entre le bundle construit localement et celui servi en production | 0 octet |
+| R3 | Écart entre le bundle construit localement et celui servi en production, une fois `VITE_API_BASE_URL` neutralisée | aucune différence hors variables d'environnement |
 | R4 | Écart entre l'horodatage d'un incident et celui de son signalement | ≤ 5 min |
 | R5 | Nombre de signalements reçus par trimestre | > 0 |
 | R6 | Existence d'une série temporelle de clics consultable | disponible |
