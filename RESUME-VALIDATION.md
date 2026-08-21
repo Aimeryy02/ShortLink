@@ -1,6 +1,15 @@
 # ✅ RÉSUMÉ EXÉCUTIF - Bloc 2 RNCP
 
-**ShortLink v1.0.0** - **21 Juillet 2026** - **VALIDÉ BLOC 2** ✅
+> **Note de réalignement — 21 août 2026.** Ce document est une **auto-évaluation**
+> rédigée avant le dépôt du Bloc 2. Plusieurs de ses valeurs chiffrées étaient
+> inexactes ou sont devenues obsolètes : nombre de tests, couverture, seuil Jest,
+> versions de Node testées, existence des étiquettes Git. Elles ont été réalignées
+> sur les valeurs **vérifiées** à cette date.
+>
+> Les sources de référence, qui prévalent en cas d'écart, sont le `README.md`, les
+> documents `docs/01` à `docs/14` et le journal des versions `CHANGELOG.md`.
+
+**ShortLink** — rédigé le **21 juillet 2026**, réaligné le **21 août 2026** — version en production : **1.1.0**
 
 ---
 
@@ -26,7 +35,7 @@
 - ✅ Fichier: `.github/workflows/ci.yml`
 - ✅ Déclenchement: Push sur main/develop, PRs
 - ✅ Jobs:
-  - Test (Node 18 & 20): `npm test` ✅ 56/56 passants
+  - Test (Node 22.x & 24.x): `npm test` ✅ 89/89 passants
   - Build Frontend: `npm run build:frontend` ✅
   - Audit: `npm audit` ✅
 - ✅ Couverture uploadée à Codecov
@@ -69,14 +78,14 @@
 
 **Critère**: Suite de tests complète avec couverture ≥70%  
 **Preuves**:
-- ✅ **Couverture RÉELLE: 92.83%** (dépasse 70%)
+- ✅ **Couverture RÉELLE: 93,05 %** (dépasse 70 %)
   ```
-  Statements: 92.83% ✅
-  Branches:   79.50% ✅
-  Functions:  97.91% ✅
+  Statements: 93,05 % ✅
+  Branches:   80,89 % ✅
+  Functions:  98,41 % ✅
   Lines:      93.02% ✅
   ```
-- ✅ **Tests**: 56 passants en 4.637 secondes
+- ✅ **Tests**: 89 passants, répartis en 14 suites
   ```
   10 suites (linkValidation, validationService, shortCodeService,
              analyticsService, statsService, linkService,
@@ -86,7 +95,7 @@
 - ✅ **Commande**: `npm run test:coverage`
 - ✅ **Tous les tests PASSENT** (0 failures)
 
-**VALIDÉ** ✅ (92.83% >> 70%)
+**VALIDÉ** ✅ (93,05 % >> 70 %)
 
 ---
 
@@ -132,7 +141,7 @@
 **Preuves**:
 - ✅ `CHANGELOG.md`: Version 1.0.0, format Keep a Changelog
 - ✅ `package.json`: `"version": "1.0.0"`
-- ✅ Git tags: À créer avant push (`git tag -a v1.0.0`)
+- ✅ Git tags: **4 étiquettes publiées** — v1.0.0, v1.0.1, v1.0.2, v1.1.0, chacune avec sa publication *Release*
 - ✅ Commits propres: Conventions semantiques
 - ✅ Sémantique versioning: MAJOR.MINOR.PATCH
 
@@ -221,7 +230,7 @@
   - Technos (Backend/Frontend/Infrastructure)
   - Architecture diagram
   - Prérequis, Installation, Commandes
-  - Tests & Couverture (92.83%)
+  - Tests & Couverture (93,05 %)
   - Sécurité OWASP table
   - Accessibilité WCAG mentionnée
   - **Statut Bloc 2 tableau complet** ← AJOUTÉ
@@ -235,7 +244,7 @@
 
 | Domaine | Métrique | Seuil | Atteint | Statut |
 |---------|----------|-------|---------|--------|
-| **Tests** | Couverture | 70% | 92.83% | ✅ |
+| **Tests** | Couverture | 70 % | 93,05 % | ✅ |
 | **Sécurité** | OWASP catégories | 10 | 10/10 | ✅ |
 | **Accessibilité** | WCAG Level | AA | AA | ✅ |
 | **Recettes** | Cas testés | 10 | 20/20 | ✅ |
@@ -249,8 +258,8 @@
 ## 📋 Fichiers Clés
 
 ```
-✅ Tests (10 fichiers):
-   src/**/*.test.js (56 tests, 92.83% couverture)
+✅ Tests (14 fichiers):
+   src/**/*.test.js (89 tests, 93,05 % de couverture)
 
 ✅ Configuration:
    jest.config.js
@@ -279,7 +288,7 @@
 - ✅ Tous les 12 critères validés
 - ✅ Toutes les métriques dépassées
 - ✅ 2500+ lignes de documentation
-- ✅ 56 tests passants (92.83% couverture)
+- ✅ 89 tests passants (93,05 % de couverture)
 - ✅ 10/10 OWASP sécurité
 - ✅ WCAG AA accessibilité
 - ✅ CI/CD entièrement automatisé
@@ -288,7 +297,7 @@
 ---
 
 **Prochaines étapes recommandées**:
-1. Créer tag Git v1.0.0 
+1. ~~Créer tag Git v1.0.0~~ — fait, 4 étiquettes publiées 
 2. Push vers GitHub
 3. Vérifier pipeline GitHub Actions ✅
 4. Déployer vers Render/Vercel
