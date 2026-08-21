@@ -1,0 +1,112 @@
+name: Anomalie
+description: Consigner une anomalie detectee en exploitation ou en recette
+title: "[ANO] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Les champs marques obligatoires sont ceux sans lesquels l'anomalie ne
+        peut pas etre reproduite, donc pas corrigee de facon fiable.
+        Processus complet : `docs/10-Gestion-anomalies.md`.
+
+        Ne jamais coller de secret dans cette fiche : ni `ADMIN_API_KEY`, ni
+        chaine de connexion MongoDB, ni jeton.
+
+  - type: dropdown
+    id: gravite
+    attributes:
+      label: Gravite
+      description: Voir la grille de gravite du § 4 de docs/10-Gestion-anomalies.md
+      options:
+        - Critique - service indisponible ou donnees en peril
+        - Majeure - fonction essentielle degradee, contournement penible
+        - Mineure - defaut visible sans blocage fonctionnel
+        - Cosmetique - aucune consequence fonctionnelle
+    validations:
+      required: true
+
+  - type: dropdown
+    id: canal
+    attributes:
+      label: Canal de detection
+      options:
+        - Sonde de supervision (alerte automatique)
+        - Integration continue (tests, build ou audit)
+        - Cahier de recettes
+        - Audit d'accessibilite ou de securite
+        - Retour utilisateur
+        - Journaux de production
+        - Observation lors du developpement
+    validations:
+      required: true
+
+  - type: input
+    id: environnement
+    attributes:
+      label: Environnement et version
+      description: Ou l'anomalie a ete observee, et sous quelle version
+      placeholder: "production (Render + Vercel), version 1.1.0, Chrome 140 / Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Etapes de reproduction
+      description: Numerotees, depuis un etat connu, suffisantes pour reproduire sans rien deviner
+      placeholder: |
+        1. Ouvrir https://short-link-omega.vercel.app
+        2. Se connecter avec une cle d'administration valide
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Resultat attendu
+    validations:
+      required: true
+
+  - type: textarea
+    id: obtenu
+    attributes:
+      label: Resultat obtenu
+      description: Message exact, code HTTP, capture ou extrait de journal
+    validations:
+      required: true
+
+  - type: textarea
+    id: frequence
+    attributes:
+      label: Frequence et perimetre
+      description: Systematique ou intermittent, sur tous les navigateurs ou un seul, pour tous les liens ou certains
+    validations:
+      required: false
+
+  - type: textarea
+    id: analyse
+    attributes:
+      label: Analyse et cause suspectee
+      description: Fichier et fonction suspectes, hypothese de cause racine
+    validations:
+      required: false
+
+  - type: textarea
+    id: preconisation
+    attributes:
+      label: Preconisation de correction
+      description: Correctif envisage, et le test qui devra en attester la non-regression
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: verifications
+    attributes:
+      label: Verifications avant soumission
+      options:
+        - label: La fiche ne contient aucun secret
+          required: true
+        - label: J'ai verifie qu'aucune anomalie identique n'est deja consignee
+          required: true
