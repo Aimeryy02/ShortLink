@@ -70,7 +70,7 @@ définit le niveau de criticité des sondes.
 | Latence de la base | `probes[mongodb].latencyMs` | Sonde applicative | < 200 ms |
 | Taux d'erreur serveur | Nombre de réponses `5xx` | Journaux Pino / Render | 0 sur une journée nominale |
 | Mémoire résidente | `probes[memory].rssMb` | Sonde applicative | < 400 Mo (instance à 512 Mo) |
-| Délai de détection (MTTD) | Temps entre la panne et l'alerte | Fréquence des sondes | ≤ 30 min (≤ 5 min avec la sonde externe optionnelle) |
+| Délai de détection (MTTD) | Temps entre la panne et l'alerte | Fréquence des sondes | **≤ 5 min** depuis l'activation de la sonde externe le 21/08/2026 (30 min par le seul workflow) |
 | Taux de réussite de la CI | Exécutions `CI - Test & Build` réussies sur `main` | GitHub Actions | 100 % sur `main` |
 | Vulnérabilités connues | Résultat de `npm audit` | CI, job `quality` | 0 de niveau `moderate` ou supérieur |
 
@@ -208,11 +208,12 @@ ce qui constitue l'historique de supervision consultable :
 
 | Source | Sonde / signal | Finalité | État |
 |---|---|---|---|
-| Render — *Health Check Path* réglé sur `/health/ready` | Sonde de plateforme sur chaque instance | Un déploiement dont la sonde d'aptitude échoue est refusé : une mauvaise configuration n'atteint pas la production | à activer (§ 10) |
+| Render — *Health Check Path* réglé sur `/health/ready` | Sonde de plateforme sur chaque instance | Un déploiement dont la sonde d'aptitude échoue est refusé : une mauvaise configuration n'atteint pas la production | **actif** depuis le 21/08/2026 |
 | Render — journaux et statut de déploiement | Événements `Live`, `Failed`, redémarrages | Corrélation d'un incident avec un déploiement | actif |
-| Render — notifications par courriel | Échec de déploiement, suspension | Alerte de plateforme | à activer (§ 10) |
+| Render — notifications par courriel | Échec de déploiement, suspension | Alerte de plateforme | **actif** depuis le 21/08/2026, réglé sur « échecs uniquement » |
 | Vercel — statut de déploiement | Succès/échec du build frontend | Détection d'une régression de build | actif |
-| MongoDB Atlas — métriques et alertes du cluster | Connexions, opérations, stockage | Surveillance de la ressource externe | à activer (§ 10) |
+| MongoDB Atlas — métriques et alertes du cluster | « Replica set has no primary » (15 min), connexions au-delà de 80 % de la limite, espace disque, CPU, fenêtre d'oplog, ciblage des requêtes | Surveillance de la ressource externe | **actif**, vérifié le 21/08/2026 |
+| Sonde externe UptimeRobot, 5 min | `GET /health/ready` avec recherche du motif `"status":"ready"` | Détection rapide, indépendante de GitHub, et maintien de l'instance hors veille | **actif** depuis le 21/08/2026 |
 | GitHub Actions — `CI - Test & Build` | 89 tests, build frontend, `npm audit` | Barrière avant déploiement | actif |
 
 ### 4.4 Journalisation, support de l'analyse
@@ -388,8 +389,10 @@ décrit dans `docs/09-Maintenance-dependances.md`.
 
 ## 9. Limites connues
 
-1. **Fréquence de 30 minutes** : le délai de détection peut atteindre 30 minutes.
-   La sonde externe optionnelle du § 10 le ramène à 5 minutes.
+1. **Fréquence de 30 minutes pour le workflow** — limite **levée le 21/08/2026** par
+   l'activation de la sonde externe du § 10, qui ramène le délai de détection à
+   5 minutes. Le workflow reste la source de l'ouverture automatique d'issue ; la
+   sonde externe apporte la réactivité.
 2. **Suspension des tâches planifiées** : GitHub désactive les workflows `cron`
    après 60 jours sans activité sur le dépôt. À réactiver après une longue
    inactivité.
@@ -406,23 +409,36 @@ décrit dans `docs/09-Maintenance-dependances.md`.
 ## 10. Configuration à réaliser dans les consoles
 
 Ces réglages ne peuvent pas être versionnés dans le dépôt : ils se font dans les
-interfaces des plateformes.
+interfaces des plateformes. **Les quatre sont en place au 21 août 2026** ; les
+procédures sont conservées pour être reproductibles après une éventuelle
+recréation des services.
 
-### Render — sonde de plateforme et notifications
+### Render — sonde de plateforme et notifications — **réalisé le 21/08/2026**
 
 1. Render → service `shortlink` → **Settings** → *Health Check Path* : saisir
-   `/health/ready`, puis enregistrer.
-2. Render → **Settings** → *Notifications* : activer les notifications par
-   courriel pour les événements de déploiement (`Deploy failed`, `Service
-   suspended`).
+   `/health/ready`, puis enregistrer. ✔
+2. Render → **Settings** → *Notifications* → *Service Notifications* : choisir
+   « Only failure notifications ». ✔ La section *Preview Environment
+   Notifications* est laissée désactivée : le projet n'utilise pas les
+   environnements de prévisualisation Render, les prévisualisations du frontend
+   étant assurées par Vercel.
 
-Conséquence : un déploiement dont la sonde d'aptitude échoue (base injoignable,
-clé absente) n'est pas mis en ligne.
+Conséquence, effective depuis le 21 août 2026 : un déploiement dont la sonde
+d'aptitude échoue — base injoignable, clé d'administration absente — n'est pas mis
+en ligne.
 
-### Sonde externe à 5 minutes (optionnelle, recommandée)
+Contrepartie assumée : la sonde étant aussi évaluée en fonctionnement, une
+indisponibilité durable de MongoDB Atlas fera considérer le service en mauvaise
+santé par Render, qui pourra le redémarrer. C'est le comportement recherché — un
+service incapable de rediriger n'a pas à rester en ligne — mais il faut savoir que
+le redémarrage n'est pas une anomalie dans ce cas, c'est la sonde qui joue son rôle.
 
-Un service de supervision gratuit (UptimeRobot, Better Stack, ou équivalent)
-permet de ramener le délai de détection à 5 minutes :
+Preuve du réglage : `perso/preuves/22-render-healthcheck-notifications-C4.1.2.png`.
+
+### Sonde externe à 5 minutes — **réalisée le 21/08/2026**
+
+Un service de supervision gratuit ramène le délai de détection à 5 minutes.
+Réglage effectivement en place sur UptimeRobot :
 
 | Paramètre | Valeur |
 |---|---|
@@ -435,10 +451,53 @@ permet de ramener le délai de détection à 5 minutes :
 Aucune donnée sensible n'est exposée : les deux points d'entrée sont publics et
 ne renvoient ni la clé d'administration ni la chaîne de connexion.
 
-### MongoDB Atlas — alertes du cluster
+Le mot-clé a été vérifié **caractère pour caractère** contre la réponse réelle du
+serveur. Ce contrôle n'est pas superflu : la sonde cherche une sous-chaîne, et un
+simple espace après les deux-points aurait rendu la correspondance impossible,
+déclenchant une fausse alerte toutes les 5 minutes. Le format compact d'Express est
+confirmé (`{"success":true,"status":"ready",…}`).
 
-Atlas → **Alerts** : activer au minimum les alertes de cluster indisponible et de
-seuil de connexions atteint, avec notification par courriel.
+Le mot-clé ne peut pas être raccourci en `ready` : la réponse dégradée contient
+`"readyState":"disconnected"`, où cette sous-chaîne est présente. La sonde resterait
+verte pendant l'incident.
+
+Effet secondaire recherché : un appel toutes les 5 minutes maintient l'instance
+Render au-dessus de son seuil de mise en veille de 15 minutes. C'est l'option
+gratuite de la recommandation R1 de `docs/12-Axes-amelioration.md`, obtenue sans
+travail supplémentaire.
+
+Preuves : `perso/preuves/23a-uptimerobot-configuration-C4.1.2.png` et
+`23b-uptimerobot-actif-C4.1.2.png`.
+
+### MongoDB Atlas — alertes du cluster — **vérifié le 21/08/2026**
+
+Atlas → cloche de notification → **Alert Settings**. La vérification a montré que
+les deux alertes recherchées étaient **déjà actives par défaut**, notifiées par
+courriel au propriétaire du projet :
+
+| Alerte | Déclenchement | Rôle |
+|---|---|---|
+| **Replica set has no primary** | après 15 min | Indisponibilité du cluster |
+| **Connections % of configured limit above 80** | immédiat | Saturation des connexions |
+
+Sont également actives et pertinentes : espace disque au-delà de 90 %, CPU au-delà
+de 95 %, fenêtre d'oplog sous 1 h, et *Query Targeting* au-delà de 1000 objets
+parcourus par objet retourné — cette dernière détectant un index manquant.
+
+Trois alertes proposées par Atlas sont sans objet ici et laissées inactives :
+celles d'Atlas Search (aucun index de recherche n'est utilisé), l'absence de
+processus `mongos` (elle concerne les clusters partitionnés, celui-ci est un
+replica set) et l'expiration de carte bancaire (offre gratuite).
+
+**Réserve mesurée** : le seuil de connexions se déclenche à 80 % de 500, soit 400
+connexions, alors que l'usage nominal mesuré est de **4**. L'alerte est donc très
+tardive. Elle n'est pas ajustée car la sonde `/health/ready` détecte
+l'indisponibilité de la base en 5 minutes, là où Atlas attend 15 minutes : la
+couche applicative est le chemin rapide, l'alerte Atlas le complément qui en donne
+la cause.
+
+Preuves : `perso/preuves/24a-atlas-cluster-identite-C4.1.2.png` (identité du
+cluster) et `24b-atlas-alertes-actives-C4.1.2.png` (règles actives).
 
 ## 11. Synthèse
 
