@@ -268,7 +268,7 @@ reproductibles.**
 
 ### Audit Complet
 
-Pour une validation **point par point détaillée** avec justifications, voir: **[VALIDATION-BLOC-2.md](VALIDATION-BLOC-2.md)** (~600 lignes)
+Auto-évaluation détaillée, critère par critère : **[VALIDATION-BLOC-2.md](VALIDATION-BLOC-2.md)** et **[RESUME-VALIDATION.md](RESUME-VALIDATION.md)**. Ce sont des documents de travail réalignés le 21/08/2026 ; en cas d'écart, les références sont ce README, `docs/01` à `docs/14` et le [CHANGELOG](CHANGELOG.md).
 
 ### Résumé des Livrables
 

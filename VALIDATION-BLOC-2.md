@@ -1,8 +1,18 @@
 # 🎯 Validation Complète - Bloc 2 RNCP
 
-**Date**: 21 Juillet 2026  
+> **Note de réalignement — 21 août 2026.** Ce document est une **auto-évaluation**
+> rédigée avant le dépôt du Bloc 2. Plusieurs de ses valeurs chiffrées étaient
+> inexactes ou sont devenues obsolètes : nombre de tests, couverture, seuil Jest,
+> versions de Node testées, existence des étiquettes Git. Elles ont été réalignées
+> sur les valeurs **vérifiées** à cette date.
+>
+> Les sources de référence, qui prévalent en cas d'écart, sont le `README.md`, les
+> documents `docs/01` à `docs/14` et le journal des versions `CHANGELOG.md`.
+
+**Date de rédaction**: 21 juillet 2026 — **réaligné le**: 21 août 2026  
 **Projet**: ShortLink - Service de Raccourcissement d'URLs  
-**Statut**: ✅ **BLOC 2 VALIDÉ**
+**Version en production**: 1.1.0  
+**Statut**: auto-évaluation concluant à la validation du Bloc 2
 
 ---
 
@@ -18,7 +28,7 @@
 - [x] **Environnement Local**: `npm run dev` + MongoDB local
   - Port: 3000 (backend), 5173 (frontend)
   - Fichier: `.env.example` + `.env`
-  - Vérification: Tests locaux ✅ (56 tests, 92.83% couverture)
+  - Vérification: Tests locaux ✅ (89 tests, 93,05 % de couverture)
 
 - [x] **Environnement Production Backend**: Render.com
   - URL: `https://shortlink-api.render.com` (spécifiée dans docs)
@@ -56,12 +66,12 @@
   - Framework: GitHub Actions (gratuit, intégré)
   - Déclenchement: Push sur `main` et `develop`, PR
   
-- [x] **Job 1 - Test**: Node 18 et 20
+- [x] **Job 1 - Test**: Node 22.x et 24.x
   ```yaml
   - Checkout code
   - Install Node.js (matrice 18.x, 20.x)
   - npm ci (installation déterministe)
-  - npm test (56 tests)
+  - npm test (89 tests)
   - npm run test:coverage (génération rapport)
   - Upload coverage à Codecov
   ```
@@ -85,14 +95,14 @@
 
 - [x] **Qualité Code**:
   - ESLint: Pas d'erreurs de syntaxe
-  - Couverture: 92.83% (seuil min: 65%)
-  - Tests: 56 passants sur 56
+  - Couverture: 93,05 % (seuil bloquant Jest: 70 %)
+  - Tests: 89 passants sur 89
 
 **Preuves**:
 ```
 ✅ .github/workflows/ci.yml - 78 lignes complètes
 ✅ npm test - Tous les tests passent
-✅ npm run test:coverage - 92.83% statements
+✅ npm run test:coverage - 93,05 % statements
 ✅ package.json - Scripts test:coverage défini
 ✅ jest.config.js - Coverage threshold configuré (65% global)
 ```
@@ -180,15 +190,15 @@
 
 **Justification**:
 
-- [x] **Couverture Finale**: **92.83%**
+- [x] **Couverture Finale**: **93,05 %**
   ```
   File              | Statements | Branches | Functions
   ──────────────────|────────────|──────────|───────────
-  TOTAL            | 92.83%     | 79.50%   | 97.91%
+  TOTAL            | 93,05 %    | 80,89 %  | 98,41 %
   ```
-  Seuil requis: 65% ✅ **Dépassé à 92.83%**
+  Seuil bloquant: 70 % ✅ **Dépassé à 93,05 %**
 
-- [x] **Test Suites**: 10 fichiers de test
+- [x] **Test Suites**: 14 fichiers de test
   1. `linkValidation.test.js` - 14 tests (Zod schemas)
   2. `validationService.test.js` - 5 tests (Anti-phishing)
   3. `shortCodeService.test.js` - 3 tests (Génération codes)
@@ -200,10 +210,10 @@
   9. `redirectController.test.js` - 4 tests (Redirections)
   10. `statsController.test.js` - 1 test (Stats endpoint)
 
-- [x] **Total**: 56 tests, tous PASSANTS ✅
+- [x] **Total**: 89 tests, tous PASSANTS ✅
   ```
   Test Suites: 10 passed, 10 total
-  Tests:       56 passed, 56 total
+  Tests:       89 passed, 89 total
   Time:        4.637 s
   ```
 
@@ -222,15 +232,15 @@
 
 **Preuves**:
 ```
-✅ 56 tests répartis en 10 fichiers
-✅ 92.83% couverture globale
+✅ 89 tests répartis en 14 fichiers
+✅ 93,05 % de couverture globale
 ✅ jest.config.js configuré avec thresholds
 ✅ npm test réussi (4.637s)
 ✅ .github/workflows/ci.yml génère rapport
 ✅ Tous les imports/exports testés
 ```
 
-**Statut**: ✅ **VALIDÉ** (92.83% >> 70%)
+**Statut**: ✅ **VALIDÉ** (93,05 % >> 70 %)
 
 ---
 
@@ -496,7 +506,7 @@ Statut: ✅ Validé
 
 - [x] **Manuel 1: Déploiement** (`docs/01-Manuel-deploiement.md`)
   - Sections: 
-    - Prérequis (Node 18+, npm, git)
+    - Prérequis (Node 22.12+, npm, git)
     - Environnement Local (MongoDB setup, npm commands)
     - Production Backend (Render configuration)
     - Production Frontend (Vercel configuration)
@@ -675,7 +685,7 @@ Statut: ✅ Validé
      - npm run build:frontend (build React)
 
   9. **Tests & Couverture**
-     - 56 tests, 92.83% couverture
+     - 89 tests, 93,05 % de couverture
      - Command: npm run test:coverage
      - CI/CD: GitHub Actions
 
@@ -731,7 +741,7 @@ Statut: ✅ Validé
 | **C2.1.1** | Infrastructure multi-environnements | ✅ | 01-Manuel-deploiement.md |
 | **C2.1.2** | Intégration Continue (CI/CD) | ✅ | .github/workflows/ci.yml |
 | **C2.2.1** | Architecture logicielle | ✅ | README.md + structure src/ |
-| **C2.2.2** | Tests unitaires (70% couverture) | ✅ | 92.83% couverture, 56 tests |
+| **C2.2.2** | Tests unitaires (70% couverture) | ✅ | 93,05 % de couverture, 89 tests |
 | **C2.2.3** | Sécurité OWASP | ✅ | 10/10 catégories, 06-Securite-* |
 | **C2.2.3** | Accessibilité WCAG | ✅ | Level AA, Lighthouse 92 |
 | **C2.2.4** | Versioning & CHANGELOG | ✅ | CHANGELOG.md v1.0.0 |
@@ -771,7 +781,7 @@ Statut: ✅ Validé
    ├── docs/04-Cahier-recettes.md (200+ lignes)
    ├── docs/05-Plan-correction-bugs.md (250+ lignes)
    ├── docs/06-Securite-Accessibilite.md (400+ lignes)
-   └── VALIDATION-BLOC-2.md (ce document, ~600 lignes)
+   └── VALIDATION-BLOC-2.md (ce document, 842 lignes)
 ```
 
 ### Métriques Finales
@@ -779,11 +789,11 @@ Statut: ✅ Validé
 ```
 Tests:
   - Suites: 10
-  - Cas: 56
-  - Passants: 56 (100%)
-  - Couverture statements: 92.83%
-  - Couverture branches: 79.50%
-  - Couverture functions: 97.91%
+  - Cas: 89
+  - Passants: 89 (100%)
+  - Couverture statements: 93,05 %
+  - Couverture branches: 80,89 %
+  - Couverture functions: 98,41 %
   - Seuil minimum: 65% ✅ DÉPASSÉ
 
 Sécurité:
@@ -814,7 +824,7 @@ ShortLink respecte **TOUS les critères** du Bloc 2 RNCP:
 ✅ **Infrastructure**: Local, staging, production  
 ✅ **CI/CD**: GitHub Actions, 3 jobs, tests automatisés  
 ✅ **Architecture**: En couches, séparation responsabilités  
-✅ **Tests**: 56 cas, 92.83% couverture (>70%)  
+✅ **Tests**: 89 cas, 93,05 % de couverture (>70 %)  
 ✅ **Sécurité**: 10/10 OWASP catégories  
 ✅ **Accessibilité**: WCAG 2.1 Level AA  
 ✅ **Versioning**: CHANGELOG, tags Git  
