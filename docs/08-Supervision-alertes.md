@@ -212,7 +212,7 @@ ce qui constitue l'historique de supervision consultable :
 | Render — journaux et statut de déploiement | Événements `Live`, `Failed`, redémarrages | Corrélation d'un incident avec un déploiement | actif |
 | Render — notifications par courriel | Échec de déploiement, suspension | Alerte de plateforme | **actif** depuis le 21/08/2026, réglé sur « échecs uniquement » |
 | Vercel — statut de déploiement | Succès/échec du build frontend | Détection d'une régression de build | actif |
-| MongoDB Atlas — métriques et alertes du cluster | Connexions, opérations, stockage | Surveillance de la ressource externe | à activer (§ 10) |
+| MongoDB Atlas — métriques et alertes du cluster | « Replica set has no primary » (15 min), connexions au-delà de 80 % de la limite, espace disque, CPU, fenêtre d'oplog, ciblage des requêtes | Surveillance de la ressource externe | **actif**, vérifié le 21/08/2026 |
 | Sonde externe UptimeRobot, 5 min | `GET /health/ready` avec recherche du motif `"status":"ready"` | Détection rapide, indépendante de GitHub, et maintien de l'instance hors veille | **actif** depuis le 21/08/2026 |
 | GitHub Actions — `CI - Test & Build` | 89 tests, build frontend, `npm audit` | Barrière avant déploiement | actif |
 
@@ -409,7 +409,9 @@ décrit dans `docs/09-Maintenance-dependances.md`.
 ## 10. Configuration à réaliser dans les consoles
 
 Ces réglages ne peuvent pas être versionnés dans le dépôt : ils se font dans les
-interfaces des plateformes.
+interfaces des plateformes. **Les quatre sont en place au 21 août 2026** ; les
+procédures sont conservées pour être reproductibles après une éventuelle
+recréation des services.
 
 ### Render — sonde de plateforme et notifications — **réalisé le 21/08/2026**
 
@@ -467,10 +469,35 @@ travail supplémentaire.
 Preuves : `perso/preuves/23a-uptimerobot-configuration-C4.1.2.png` et
 `23b-uptimerobot-actif-C4.1.2.png`.
 
-### MongoDB Atlas — alertes du cluster
+### MongoDB Atlas — alertes du cluster — **vérifié le 21/08/2026**
 
-Atlas → **Alerts** : activer au minimum les alertes de cluster indisponible et de
-seuil de connexions atteint, avec notification par courriel.
+Atlas → cloche de notification → **Alert Settings**. La vérification a montré que
+les deux alertes recherchées étaient **déjà actives par défaut**, notifiées par
+courriel au propriétaire du projet :
+
+| Alerte | Déclenchement | Rôle |
+|---|---|---|
+| **Replica set has no primary** | après 15 min | Indisponibilité du cluster |
+| **Connections % of configured limit above 80** | immédiat | Saturation des connexions |
+
+Sont également actives et pertinentes : espace disque au-delà de 90 %, CPU au-delà
+de 95 %, fenêtre d'oplog sous 1 h, et *Query Targeting* au-delà de 1000 objets
+parcourus par objet retourné — cette dernière détectant un index manquant.
+
+Trois alertes proposées par Atlas sont sans objet ici et laissées inactives :
+celles d'Atlas Search (aucun index de recherche n'est utilisé), l'absence de
+processus `mongos` (elle concerne les clusters partitionnés, celui-ci est un
+replica set) et l'expiration de carte bancaire (offre gratuite).
+
+**Réserve mesurée** : le seuil de connexions se déclenche à 80 % de 500, soit 400
+connexions, alors que l'usage nominal mesuré est de **4**. L'alerte est donc très
+tardive. Elle n'est pas ajustée car la sonde `/health/ready` détecte
+l'indisponibilité de la base en 5 minutes, là où Atlas attend 15 minutes : la
+couche applicative est le chemin rapide, l'alerte Atlas le complément qui en donne
+la cause.
+
+Preuves : `perso/preuves/24a-atlas-cluster-identite-C4.1.2.png` (identité du
+cluster) et `24b-atlas-alertes-actives-C4.1.2.png` (règles actives).
 
 ## 11. Synthèse
 

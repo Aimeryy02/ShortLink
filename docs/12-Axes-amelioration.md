@@ -358,6 +358,33 @@ ensuite, interface enfin.
 | Risque | Régression : c'est précisément pourquoi ces montées ne sont pas regroupées |
 | Priorité | **8** — hors fenêtre de certification |
 
+### R9 — Nommer explicitement la base de données de production
+
+**Constat.** La chaîne de connexion ne précise aucun nom de base. Mongoose retombe
+donc sur le défaut de MongoDB : les données de production — 9 liens et 12 clics au
+21 août 2026 — sont stockées dans une base littéralement nommée **`test`**.
+Vérification faite en interrogeant le cluster : `databaseName` vaut `test`, et les
+collections `links` et `clicks` y résident.
+
+Le service fonctionne parfaitement ainsi. Le défaut est de lisibilité et de
+sûreté : une base nommée `test` invite à croire qu'elle est jetable.
+
+**Action.** Ajouter le nom de base à `MONGO_URI` (`.../shortlink?retryWrites=...`),
+côté `.env` et côté Render, puis migrer les deux collections.
+
+| Critère | Évaluation |
+|---|---|
+| Coût | 1 heure, dont la migration des collections et la revérification de la production |
+| Délai | 1 heure, mais **hors période de certification** |
+| Gain | Aucun gain fonctionnel ni de performance. Uniquement de la lisibilité et une réduction du risque de suppression accidentelle |
+| Risque | **Réel** : toute erreur de migration fait perdre les données d'usage. L'opération n'est pas réversible sans sauvegarde, or les sauvegardes sont inactives sur l'offre gratuite |
+| Priorité | **9** — à faire, mais jamais sous contrainte de calendrier |
+
+Cette recommandation illustre un arbitrage assumé : un défaut **documenté** vaut
+mieux qu'un défaut corrigé dans la précipitation. Le rapport entre un gain nul en
+fonctionnalité et un risque réel de perte de données ne justifie pas d'agir
+maintenant.
+
 ## 4. Priorisation
 
 | Rang | Recommandation | Coût | Délai | Gain principal |
@@ -370,6 +397,7 @@ ensuite, interface enfin.
 | 6 | R6 — indicateurs d'usage | 1 jour | 1 semaine | Rend l'amélioration mesurable |
 | 7 | R7 — `geoip-lite` 2.x | 2 h | avril 2027 | Sortie de dette |
 | 8 | R8 — montées majeures | 0,5 à 2 j chacune | 1 par trimestre | Maintenabilité |
+| 9 | R9 — nommer la base de production | 1 h | hors certification | Lisibilité, risque de suppression accidentelle réduit |
 
 Constat de cette priorisation : **les quatre premières recommandations coûtent
 moins d'une heure au total**, et couvrent le temps de réponse, la sûreté du
