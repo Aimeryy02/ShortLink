@@ -159,6 +159,38 @@ l'offre payante, et elle attend un usage qui la justifie.
 |---|---|
 | Gain | Temps de réponse de la fonction centrale ramené de 22 s à ~100 ms dans le cas le plus fréquent |
 | Priorité | **1** — le seul gain d'attractivité directement perceptible par un visiteur |
+| État | **Réalisé le 21/08/2026**, par l'option gratuite. Mesures ci-dessous |
+
+#### Résultat mesuré
+
+La sonde externe de R4 a été activée le 21 août 2026 avec un intervalle de
+5 minutes, inférieur au seuil de mise en veille de 15 minutes. Elle produit donc
+l'effet visé par R1 sans travail supplémentaire.
+
+| Mesure | Avant (18/08/2026) | Après (21/08/2026) |
+|---|---|---|
+| Premier appel après une longue inactivité | **22,4 s** | **0,147 s** |
+| Appels suivants | ~100 ms | 86 à 98 ms |
+| Continuité du processus (`uptimeSeconds`) | remise à zéro à chaque réveil | **4 840 s**, soit 80 min ininterrompues |
+
+Le protocole de mesure : aucune sollicitation de l'API pendant 45 minutes, puis un
+premier appel chronométré. Sans dispositif, l'instance aurait dormi depuis 30
+minutes et ce premier appel aurait coûté une vingtaine de secondes.
+
+L'indicateur décisif est `uptimeSeconds` : 80 minutes de fonctionnement continu
+établissent que le processus n'a **pas** été arrêté puis relancé, ce qu'une simple
+mesure de latence ne prouverait pas.
+
+**Réserve d'attribution, à énoncer.** Deux réglages ont été activés le même jour :
+la sonde externe à 5 minutes et la sonde de plateforme Render. Le second interroge
+aussi `/health/ready` périodiquement. L'effet est donc établi, mais son
+attribution à la seule sonde externe est **probable sans être isolée** — il
+faudrait désactiver l'un des deux dispositifs pour trancher, ce qui n'a pas
+d'intérêt pratique puisque les deux sont voulus.
+
+**Ce qui reste vrai malgré ce gain** : maintenir une instance éveillée consomme des
+ressources pour rien la plupart du temps. Le contournement fonctionne, mais la
+solution propre reste l'offre payante, et elle attend un usage qui la justifie.
 
 ### R2 — Protéger la branche `main` par les contrôles d'intégration continue
 
@@ -280,6 +312,7 @@ indisponibilité peut donc durer 30 minutes avant d'être signalée
 | Délai | immédiat |
 | Gain | Délai de détection divisé par 6. Effet de bord utile : les appels réguliers limitent la mise en veille visée par R1 |
 | Priorité | **4** |
+| État | **Réalisée le 21/08/2026** — moniteur UptimeRobot de type mot-clé sur `/health/ready`, intervalle 5 min, alerte par courriel. L'effet de bord sur R1 est mesuré et chiffré au § R1 |
 
 ### R5 — Ouvrir un canal de signalement pour le visiteur
 
@@ -389,10 +422,10 @@ maintenant.
 
 | Rang | Recommandation | Coût | Délai | Gain principal |
 |---|---|---|---|---|
-| 1 | R1 — démarrage à froid | gratuit, ou ~7 $/mois | 20 min | 22 s → ~100 ms sur la fonction centrale |
+| 1 | R1 — démarrage à froid | gratuit, ou ~7 $/mois | 20 min | 22 s → ~100 ms sur la fonction centrale — **réalisé, mesuré à 0,147 s** |
 | 2 | R2 — protection de branche | configuration | 10 min | Plus aucun déploiement non validé |
 | 3 | R3 — build reproductible | 6 lignes | 15 min | La CI valide enfin l'artefact livré |
-| 4 | R4 — détection à 5 min | gratuit | 15 min | Délai de détection ÷ 6 |
+| 4 | R4 — détection à 5 min | gratuit | 15 min | Délai de détection ÷ 6 — **réalisée** |
 | 5 | R5 — canal de signalement | 1 jour | 1 semaine | Rend le retour utilisateur possible |
 | 6 | R6 — indicateurs d'usage | 1 jour | 1 semaine | Rend l'amélioration mesurable |
 | 7 | R7 — `geoip-lite` 2.x | 2 h | avril 2027 | Sortie de dette |
@@ -442,10 +475,10 @@ irréaliste au regard du projet décrédibiliserait tout le plan.
 
 | Recommandation | Indicateur de contrôle | Cible |
 |---|---|---|
-| R1 | Temps de réponse du premier appel après 20 min d'inactivité | < 1 s |
+| R1 | Temps de réponse du premier appel après 20 min d'inactivité | < 1 s — **atteint : 0,147 s** |
 | R2 | Part des commits de `main` issus d'une demande de fusion avec CI verte | 100 % |
 | R3 | Écart entre le bundle construit localement et celui servi en production, une fois `VITE_API_BASE_URL` neutralisée | aucune différence hors variables d'environnement |
-| R4 | Écart entre l'horodatage d'un incident et celui de son signalement | ≤ 5 min |
+| R4 | Écart entre l'horodatage d'un incident et celui de son signalement | ≤ 5 min — **dispositif en place** |
 | R5 | Nombre de signalements reçus par trimestre | > 0 |
 | R6 | Existence d'une série temporelle de clics consultable | disponible |
 | R7 | `npm audit` et version de `geoip-lite` | 0 vulnérabilité, branche 2.x |
