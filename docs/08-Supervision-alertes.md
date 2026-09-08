@@ -225,7 +225,9 @@ les sondes disent **qu'il y a** un problème, les journaux disent **pourquoi**.
 - les erreurs `5xx` et les refus d'accès `401` sont journalisés ;
 - la clé d'administration n'est **jamais** journalisée (comportement couvert par
   un test unitaire dédié) ;
-- les adresses IP sont pseudonymisées avant stockage (`analyticsService.js`).
+- aucune adresse IP n'est stockée avec les clics ; celle d'une requête
+  d'administration refusée est journalisée (`adminAuthMiddleware.js`) pour la
+  détection d'abus, dans la limite de la rétention des journaux Render.
 
 ## 5. Critères de qualité et de performance
 

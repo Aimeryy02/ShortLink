@@ -57,6 +57,10 @@ REDIRECT_RATE_LIMIT_WINDOW_MS=60000
 REDIRECT_RATE_LIMIT_MAX_REQUESTS=120
 LOG_LEVEL=info
 SHORT_CODE_LENGTH=6
+# Conservation des clics en jours (index TTL MongoDB). 395 = 13 mois.
+CLICK_RETENTION_DAYS=395
+# Facultatif : contact affiché sur GET /confidentialite (adresse ou URL).
+# PRIVACY_CONTACT=dpo@exemple.fr
 # Clé protégeant les opérations de gestion. Minimum 32 caractères.
 # Sans elle (ou si trop courte), l'administration renvoie 503.
 ADMIN_API_KEY=remplacer-par-un-secret-aleatoire-de-32-caracteres-minimum
