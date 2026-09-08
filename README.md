@@ -642,7 +642,8 @@ shortlink/
   - patterns suspects `paypal.*verify`, `amazon.*account.*suspend`, `banking.*login`
   - domaines `.tk`, `.ga`, `.ml`
   - blacklist de domaines dans `validationService.js`
-- IP des clics hashee avant stockage
+- aucune adresse IP stockee avec les clics (pays uniquement), conservation bornee
+  a 13 mois, information des personnes sur `GET /confidentialite`
 - Erreurs centralisees via middleware global
 - dependances verrouillees et `npm audit` sans vulnerabilite connue au 24/07/2026
 
@@ -658,13 +659,15 @@ A chaque redirection `GET /:code`, l'application :
   - navigateur
   - OS
   - device
-  - IP hashee
-  - pays
-  - referer
+  - pays (deduit de l'IP, qui n'est pas conservee)
   - domaine referer
   - langue
 
-Les statistiques sont calculees depuis la collection `Click`.
+Les statistiques sont calculees depuis la collection `Click`. Chaque clic est
+supprime automatiquement au bout de `CLICK_RETENTION_DAYS` jours (395 par
+defaut) par un index TTL. Ni adresse IP ni adresse complete de la page de
+provenance ne sont enregistrees ; l'information des personnes est servie par
+`GET /confidentialite`.
 
 ## QR Code
 

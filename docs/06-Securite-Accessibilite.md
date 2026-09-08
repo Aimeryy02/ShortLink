@@ -63,7 +63,7 @@ RGAA 4.1.2 reste le référentiel en vigueur à la date du présent contrôle.
 | A01 — Broken Access Control | Les routes de création, liste, détail, modification, suppression et statistiques exigent `X-Admin-Key`. Les redirections et QR restent volontairement publics. | `adminAuthMiddleware.js`, `linkRoutes.js`, `statsRoutes.js` |
 | A02 — Security Misconfiguration | Helmet, CORS limité, `trust proxy` en production, corps HTTP limité à 20 Ko, erreurs 500 génériques, limites API et redirections. | `app.js`, `cors.js`, `rateLimit.js`, `redirectRateLimit.js` |
 | A03 — Software Supply Chain Failures | `package-lock.json`, installation reproductible, CI Node 22/24, audit npm et mises à jour contrôlées. Surveillance automatisée des versions par Dependabot (hebdomadaire) et audit planifié chaque lundi, en plus de l'audit à chaque push. L'audit du 18/08/2026 retourne 0 vulnérabilité connue après correction de 5 avis. | `package-lock.json`, `.github/workflows/ci.yml`, `.github/dependabot.yml`, `docs/09-Maintenance-dependances.md`, sortie `npm audit` |
-| A04 — Cryptographic Failures | HTTPS Render/Vercel, secret d'au moins 32 caractères, comparaison à temps constant après SHA-256, `.env` ignoré. Les IP sont pseudonymisées avant stockage. | `adminAuthMiddleware.js`, `analyticsService.js`, `.gitignore` |
+| A04 — Cryptographic Failures | HTTPS Render/Vercel, secret d'au moins 32 caractères, comparaison à temps constant après SHA-256, `.env` ignoré. Aucune adresse IP n'est stockée avec les clics (depuis la 1.2.0, voir § 7). | `adminAuthMiddleware.js`, `analyticsService.js`, `.gitignore` |
 | A05 — Injection | Schémas Zod, protocoles HTTP/HTTPS uniquement, alias borné, recherche limitée à 100 caractères et métacaractères de regex échappés. Aucun `eval`. | `linkValidation.js`, `linkService.js` |
 | A06 — Insecure Design | Séparation public/administration, modèle de menaces, collisions contrôlées, liens expirés/désactivés bloqués et états non mis en cache. | routes, services et `redirectController.js` |
 | A07 — Authentication Failures | Clé requise, longueur serveur minimale, message 401 générique, clé jamais journalisée, conservation limitée à `sessionStorage`, bouton de déconnexion. | middleware et écran « Accès administrateur » |
@@ -75,7 +75,10 @@ RGAA 4.1.2 reste le référentiel en vigueur à la date du présent contrôle.
 
 - une clé d'administration unique convient au prototype mais ne remplace pas
   des comptes nominatifs, des rôles et une traçabilité par utilisateur ;
-- le hash d'IP est une pseudonymisation, pas une anonymisation irréversible ;
+- les données de clic restent des données techniques (pays, navigateur, langue,
+  domaine de provenance) ; elles ne sont pas croisées entre elles, et toute
+  évolution qui les combinerait en empreinte de visiteur ferait retomber le
+  traitement sous le régime du consentement ;
 - le Top 10 ne remplace pas un audit ASVS ou un test d'intrusion ;
 - la journalisation est consultée à la demande dans Render : elle n'est pas
   exportée vers un agrégateur externe et n'est pas conservée au-delà de la
@@ -168,7 +171,70 @@ Un score Lighthouse ne suffit pas à déclarer une conformité RGAA complète. L
 contrôles manuels clavier, focus, zoom et restitution doivent accompagner le
 rapport automatisé.
 
-## 7. Tests et résultats techniques
+## 7. Protection des données personnelles (RGPD)
+
+Ce que l'application traite, pourquoi, combien de temps — et où chaque point se
+vérifie. Mesures introduites par la version 1.2.0.
+
+### Données traitées
+
+| Donnée | Où | Finalité et base légale | Conservation |
+|---|---|---|---|
+| Clic : date, pays, famille de navigateur, système, type d'appareil, langue, **domaine** de provenance | collection `Click` | statistiques agrégées par lien — intérêt légitime (article 6, § 1, f) | 395 jours (13 mois) par index TTL, réglable par `CLICK_RETENTION_DAYS` |
+| Adresse IP de la requête de redirection | mémoire du processus, le temps de la requête | déduction du pays (`geoip-lite`) | **non conservée** |
+| Adresse IP d'une requête d'administration refusée | journaux Render | sécurité, détection d'abus — intérêt légitime | rétention des journaux de la plateforme |
+| Lien : URL d'origine, alias, titre, étiquettes | collection `Link` | exécution du service | jusqu'à suppression par l'administrateur |
+
+Aucun compte utilisateur, aucune adresse électronique, aucun cookie ni traceur :
+la redirection répond par un `302` avec `Cache-Control: no-store` et sans
+`Set-Cookie`. Le traitement n'est donc pas soumis au consentement préalable.
+
+### Mesures de minimisation
+
+- **L'adresse IP n'est plus stockée.** Jusqu'à la 1.1.0, elle était conservée
+  hachée en SHA-256 sans clé. Sur l'espace des adresses IPv4 (2³² valeurs), un tel
+  hachage s'inverse par énumération en quelques minutes : c'était une
+  pseudonymisation, pas une anonymisation. Le pays, seule information utile aux
+  statistiques, est déduit au moment du clic et l'IP est oubliée
+  (`src/services/analyticsService.js`).
+- **Le referer complet n'est plus stocké.** Seul le nom de domaine est conservé
+  (`refererDomain`, déjà la seule valeur utilisée par les statistiques). Les
+  paramètres d'URL, qui peuvent transporter des identifiants ou des adresses
+  électroniques, ne sont plus enregistrés.
+- **Durée de conservation bornée** par un index TTL MongoDB sur `clickedAt`
+  (`src/models/Click.js`). 395 jours par défaut, soit 13 mois : la borne haute
+  retenue par la CNIL pour les traceurs de mesure d'audience. La CNIL admet
+  jusqu'à 25 mois pour les données collectées ; la valeur la plus courte est
+  retenue, la finalité n'exigeant pas davantage. Les index de la collection sont
+  synchronisés au démarrage (`src/config/database.js`), ce qui remplace l'ancien
+  index simple sans intervention manuelle.
+- **Information des personnes** (article 13) : page `GET /confidentialite`
+  servie par l'API — c'est-à-dire par le domaine sur lequel les clics sont
+  collectés — et liée depuis la page de prévisualisation d'un lien ainsi que
+  depuis le pied de page de l'interface d'administration. Elle affiche la durée
+  de conservation réellement configurée.
+
+### À la charge de l'exploitant
+
+- renseigner `PRIVACY_CONTACT` (adresse ou URL de contact) ;
+- inscrire le traitement au registre des activités de traitement (article 30) ;
+- vérifier la région d'hébergement de l'application (Render) et de la base
+  (MongoDB Atlas) ; hors Union européenne, s'appuyer sur le cadre de transfert de
+  l'hébergeur (*Data Privacy Framework* ou clauses contractuelles types) ;
+- les clics enregistrés avant la 1.2.0 conservent les champs `ip` et `referer`
+  jusqu'à leur expiration par le TTL. Pour les purger immédiatement :
+  `db.clicks.updateMany({}, { $unset: { ip: "", referer: "" } })`.
+
+### Vérification
+
+- tests : `src/models/Click.test.js` (absence des champs, index TTL),
+  `src/services/analyticsService.test.js` (aucune IP ni adresse de page dans le
+  document créé), `src/controllers/privacyController.test.js`,
+  `src/config/database.test.js` ;
+- en production : `curl -sI https://<api>/confidentialite` renvoie `200` ;
+  `curl -sI https://<api>/<code>` ne renvoie aucun en-tête `set-cookie`.
+
+## 8. Tests et résultats techniques
 
 Résultats du 24 juillet 2026 :
 
@@ -188,7 +254,7 @@ Les tests couvrent notamment :
 - analyse bornée du User-Agent ;
 - CORS, validation, expiration, désactivation et erreurs.
 
-## 8. Captures à intégrer au PDF
+## 9. Captures à intégrer au PDF
 
 1. `npm audit` montrant `0 vulnerabilities`.
 2. CI GitHub Actions verte après la sécurisation.
@@ -199,7 +265,7 @@ Les tests couvrent notamment :
 7. Navigation clavier avec focus visible dans une modale.
 8. Vue responsive/zoom sans perte de contenu.
 
-## 9. Conclusion
+## 10. Conclusion
 
 Le prototype comporte des mesures explicites et testées pour chacune des dix
 catégories OWASP 2025 et applique les exigences essentielles du RGAA 4.1.2.

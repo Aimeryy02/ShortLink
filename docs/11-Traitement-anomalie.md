@@ -188,7 +188,7 @@ distinction compte : un correctif fusionné mais non déployé ne résout rien.
 | Fiche de consignation | `docs/10-Gestion-anomalies.md`, § 7 |
 | Correctif | commit `aea4aab` |
 | Fiche technique du bogue | `docs/05-Plan-correction-bugs.md`, BUG-008 |
-| Conséquence sur l'audit d'accessibilité | `docs/06-Securite-Accessibilite.md`, § 9 |
+| Conséquence sur l'audit d'accessibilité | `docs/06-Securite-Accessibilite.md`, § 10 |
 | Journal des versions | `CHANGELOG.md`, entrée 1.0.1 |
 | Preuve en production | `perso/preuves/13-prod-lighthouse-100-C2.2.3.png` |
 
