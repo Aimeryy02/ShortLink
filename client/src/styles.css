@@ -41,6 +41,23 @@ input {
   margin-bottom: 28px;
 }
 
+.page-footer {
+  width: min(100%, 760px);
+  font-size: 0.9rem;
+  color: #4b5563;
+  text-align: center;
+}
+
+.page-footer a {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.page-footer a:focus-visible {
+  outline: 3px solid #15803d;
+  outline-offset: 2px;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: #15803d;

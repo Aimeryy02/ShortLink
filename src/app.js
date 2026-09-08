@@ -7,6 +7,7 @@ const rateLimiter = require('./config/rateLimit');
 const redirectRateLimiter = require('./config/redirectRateLimit');
 const routes = require('./routes');
 const healthRoutes = require('./routes/healthRoutes');
+const { renderPrivacyPage } = require('./controllers/privacyController');
 const redirectRoutes = require('./routes/redirectRoutes');
 const notFoundMiddleware = require('./middlewares/notFoundMiddleware');
 const errorMiddleware = require('./middlewares/errorMiddleware');
@@ -34,11 +35,14 @@ app.get('/', (req, res) => {
       health: '/health',
       readiness: '/health/ready',
       links: '/api/links',
+      privacy: '/confidentialite',
     },
   });
 });
 
 app.use('/health', healthRoutes);
+// Déclarée avant les redirections, sinon « confidentialite » serait lu comme un code court.
+app.get('/confidentialite', renderPrivacyPage);
 
 app.use('/api', rateLimiter);
 app.use(routes);

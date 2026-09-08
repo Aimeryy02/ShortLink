@@ -330,6 +330,7 @@ function App() {
 
           {error && <p className="message error" role="alert">{error}</p>}
         </section>
+        <PrivacyFooter />
       </main>
     );
   }
@@ -532,7 +533,16 @@ function App() {
           </div>
         </Modal>
       )}
+      <PrivacyFooter />
     </main>
+  );
+}
+
+function PrivacyFooter() {
+  return (
+    <footer className="page-footer">
+      <a href={`${API_BASE_URL}/confidentialite`}>Données personnelles</a>
+    </footer>
   );
 }
 

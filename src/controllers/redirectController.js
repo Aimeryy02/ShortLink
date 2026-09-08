@@ -156,6 +156,16 @@ function renderPreviewPage(originalUrl, code) {
         background: #e5e7eb;
       }
 
+      .legal {
+        margin: 24px 0 0;
+        font-size: 0.9rem;
+        color: #4b5563;
+      }
+
+      .legal a {
+        color: #15803d;
+      }
+
       @media (max-width: 480px) {
         main {
           padding: 24px;
@@ -180,6 +190,8 @@ function renderPreviewPage(originalUrl, code) {
         <a class="button-link continue-link" href="${continueHref}">Continuer</a>
         <a class="button-link cancel-link" href="/">Annuler</a>
       </div>
+      <p class="legal">Ce clic est comptabilisé sans adresse IP ni cookie —
+        <a href="/confidentialite">données personnelles</a>.</p>
     </main>
   </body>
 </html>`;
