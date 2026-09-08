@@ -16,10 +16,74 @@ de sa mise en production, telle qu'enregistrée par la plateforme d'hébergement
 
 | Version | Étiquette | Commit | Mise en production |
 |---|---|---|---|
+| 1.2.0 | `v1.2.0` | à consigner après publication | à consigner après déploiement |
 | 1.1.0 | `v1.1.0` | `59df1ff` | 18/08/2026 à 13:31:54 UTC |
 | 1.0.2 | `v1.0.2` | `aea4aab` | 24/07/2026 à 17:18:27 UTC |
 | 1.0.1 | `v1.0.1` | `d1efaee` | non déployée isolément — contenu mis en ligne avec la 1.0.2 |
 | 1.0.0 | `v1.0.0` | `ce90682` | 24/07/2026 à 00:29:18 UTC |
+
+---
+
+## [1.2.0] - 2026-09-08
+
+Étiquette `v1.2.0` · commit et date de mise en production consignés après le
+déploiement (procédure `docs/13`, étapes 6 et 7).
+
+Version consacrée à la protection des données personnelles : minimisation des
+données de clic, durée de conservation et information des personnes.
+
+### Ajouté
+
+- Page d'information des personnes `GET /confidentialite` (RGPD, article 13) :
+  données enregistrées lors d'un clic, finalité et base légale, durée de
+  conservation, hébergement, droits. Liée depuis la page de prévisualisation d'un
+  lien et depuis le pied de page de l'interface d'administration.
+- Durée de conservation des clics : index TTL MongoDB sur `clickedAt`, 395 jours
+  (13 mois) par défaut, réglable par `CLICK_RETENTION_DAYS`. Les index de la
+  collection sont synchronisés au démarrage du serveur (`Click.syncIndexes()`),
+  ce qui remplace l'ancien index simple sans intervention manuelle.
+- Variables `CLICK_RETENTION_DAYS` et `PRIVACY_CONTACT` (facultative) dans
+  `.env.example` et `docs/01`.
+
+### Modifié
+
+- **L'adresse IP n'est plus stockée avec les clics.** Elle ne sert qu'à déduire le
+  pays, en mémoire, au moment du clic. Jusqu'ici elle était conservée hachée en
+  SHA-256 sans clé — un hachage inversible par énumération des 2³² adresses
+  IPv4, donc une pseudonymisation et non une anonymisation.
+- **Le referer complet n'est plus stocké** ; seul le nom de domaine de provenance
+  est conservé (`refererDomain`, déjà la seule valeur utilisée par les
+  statistiques). Les paramètres d'URL, susceptibles de contenir des
+  identifiants, ne sont plus enregistrés.
+- Champs `ip` et `referer` retirés du schéma `Click`. Les documents antérieurs
+  les conservent jusqu'à leur expiration par le TTL ; une purge immédiate est
+  décrite dans `docs/06`, § 7.
+- Racine de l'API : `/confidentialite` ajoutée à la liste des points d'entrée.
+- Version du paquet 1.1.0 → 1.2.0, exposée par `GET /health`.
+
+### Sécurité
+
+- Correction de 3 vulnérabilités modérées de `qs` (GHSA-x5fp-wj9c-mxmx,
+  GHSA-4mjr-xmp4-gh2g), détectées le 07/09/2026 par l'audit hebdomadaire
+  (issue #20) sans aucune modification du code. `express` 4.22.2 et
+  `body-parser` 1.20.6 déclarent `qs ~6.15.1`, plage qui exclut la 6.16.0
+  corrigée : `qs` est imposé en 6.16.0 par un `overrides` npm, à retirer dès
+  qu'une version d'`express` 4 élargira sa plage. `npm audit` : 3 avis → 0.
+
+### Tests
+
+- 105 tests unitaires répartis en 18 suites (+16 tests et +4 suites : modèle
+  `Click`, configuration de conservation, page d'information, synchronisation des
+  index). Couverture mesurée : 94,23 % des instructions, 82,82 % des branches,
+  98,50 % des fonctions, 95,48 % des lignes.
+
+### Documentation
+
+- `docs/06-Securite-Accessibilite.md` : nouvelle section 7 « Protection des
+  données personnelles (RGPD) » ; sections suivantes renumérotées (7 → 8, 8 → 9,
+  9 → 10) et référence mise à jour dans `docs/11`.
+- `README.md`, `docs/01` et `docs/08` alignés sur les données réellement
+  stockées.
 
 ---
 
