@@ -1,4 +1,3 @@
-const crypto = require('crypto');
 const geoip = require('geoip-lite');
 
 const Click = require('../models/Click');
@@ -11,8 +10,9 @@ async function trackClick(link, req) {
 
     const agent = parseUserAgent(req.headers['user-agent']);
     const referer = req.headers.referer || req.headers.referrer || 'direct';
-    const clientIp = getClientIp(req);
-    const geo = geoip.lookup(clientIp);
+    // L'adresse IP ne sert qu'à déduire le pays : elle n'est ni stockée ni
+    // journalisée. Le referer complet est réduit à son nom de domaine.
+    const geo = geoip.lookup(getClientIp(req));
     const clickedAt = new Date();
 
     await Click.create({
@@ -21,9 +21,7 @@ async function trackClick(link, req) {
       browser: agent.browser,
       os: agent.os,
       device: agent.device,
-      ip: hashIP(clientIp),
       country: geo?.country || 'unknown',
-      referer,
       refererDomain: getRefererDomain(referer),
       language: getLanguage(req),
     });
@@ -58,10 +56,6 @@ function getClientIp(req) {
   }
 
   return req.ip || req.socket?.remoteAddress || 'unknown';
-}
-
-function hashIP(ip) {
-  return crypto.createHash('sha256').update(ip).digest('hex').substring(0, 16);
 }
 
 function getRefererDomain(referer) {
