@@ -16,7 +16,7 @@ de sa mise en production, telle qu'enregistrée par la plateforme d'hébergement
 
 | Version | Étiquette | Commit | Mise en production |
 |---|---|---|---|
-| 1.2.0 | `v1.2.0` | à consigner après publication | à consigner après déploiement |
+| 1.2.0 | `v1.2.0` | `51bd267` | 08/09/2026 à 11:48:49 UTC |
 | 1.1.0 | `v1.1.0` | `59df1ff` | 18/08/2026 à 13:31:54 UTC |
 | 1.0.2 | `v1.0.2` | `aea4aab` | 24/07/2026 à 17:18:27 UTC |
 | 1.0.1 | `v1.0.1` | `d1efaee` | non déployée isolément — contenu mis en ligne avec la 1.0.2 |
@@ -26,8 +26,12 @@ de sa mise en production, telle qu'enregistrée par la plateforme d'hébergement
 
 ## [1.2.0] - 2026-09-08
 
-Étiquette `v1.2.0` · commit et date de mise en production consignés après le
-déploiement (procédure `docs/13`, étapes 6 et 7).
+Étiquette `v1.2.0` · commit `51bd267` · déployée le 08/09/2026 à 11:48:49 UTC.
+
+Vérifications après déploiement : `GET /health` annonce `1.2.0` ;
+`GET /confidentialite` répond `200` ; la redirection répond `302` sans
+`Set-Cookie` ; l'index `clickedAt_1` de la collection `clicks` porte
+`expireAfterSeconds: 34128000` (395 jours), en remplacement de l'index simple.
 
 Version consacrée à la protection des données personnelles : minimisation des
 données de clic, durée de conservation et information des personnes.
