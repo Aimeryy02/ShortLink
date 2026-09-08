@@ -39,5 +39,8 @@
   "devDependencies": {
     "jest": "^29.6.1",
     "vite": "^8.1.5"
+  },
+  "overrides": {
+    "qs": "6.16.0"
   }
 }

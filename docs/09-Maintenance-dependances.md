@@ -231,6 +231,7 @@ Priorisation retenue : d'abord ce qui porte la sécurité et l'accès aux donné
 | 24/07/2026 | `ce90682` | Retrait de `bcryptjs` et `useragent`, `vite` 5 → 8, rétrogradation de `geoip-lite` en `^1.2.2` | mineur + majeur | `npm audit` à 0 le jour même (correctif fragile, voir § 7) |
 | 18/08/2026 | `5a3a278` | `brace-expansion`, `js-yaml`, `mongoose`, `nanoid`, `postcss` | correctif | 89 tests, build, `npm audit` à 0, CI verte |
 | 18/08/2026 | voir § 7 | `helmet` 8.3.0, `vite` 8.2.1, pincement de `geoip-lite` à 1.2.2 | mineur + pincement | 89 tests, build, `npm ci`, `npm audit` à 0 |
+| 08/09/2026 | PR #21 | `qs` 6.15.3 → 6.16.0 imposé par `overrides` npm : `express` 4.22.2 et `body-parser` 1.20.6 déclarent `qs ~6.15.1`, plage qui exclut la version corrigée (3 avis modérés détectés le 07/09 par l'audit planifié, issue #20) | correctif transitif forcé | 105 tests, build, `npm audit` 3 → 0 ; override à retirer dès qu'`express` 4 élargira sa plage |
 
 ## 10. Première revue Dependabot — 18 août 2026
 
